@@ -33,6 +33,11 @@ async def test_delete_image(test_client: AsyncClient, ensure_db_schema: None):
     assert get_resp.status_code == HTTPStatus.NOT_FOUND, "Image delete response was fine but an image still returned"
 
 
+async def test_delete_non_existing_image(test_client: AsyncClient, ensure_db_schema: None):
+    del_resp = await test_client.delete(f"/images/{2**25}")
+    assert del_resp.status_code == HTTPStatus.NOT_FOUND, "Image should not be found"
+
+
 async def test_get_image(test_client: AsyncClient, ensure_db_schema: None):
     with open("test/resources/image-upload.png", mode="rb") as f:
         resp = await test_client.post("/images/upload", files={"image": ("Charmander", f)})
@@ -44,3 +49,8 @@ async def test_get_image(test_client: AsyncClient, ensure_db_schema: None):
     assert get_resp.status_code == HTTPStatus.OK
     assert resp.content
     assert isinstance(get_resp.content, bytes)
+
+
+async def test_get_non_existing_image(test_client: AsyncClient, ensure_db_schema: None):
+    get_resp = await test_client.get(f"/images/{2**25}")
+    assert get_resp.status_code == HTTPStatus.NOT_FOUND, "Image should not be found"
