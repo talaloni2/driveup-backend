@@ -24,5 +24,5 @@ class DatabaseService:
             await self._session_ctx.__aexit__(exc_type, exc_val, exc_tb)
             await self._txn_ctx.__aexit__(exc_type, exc_val, exc_tb)
 
-    def _begin_session(self) -> _DatabaseSession:
+    def begin_session(self) -> _DatabaseSession:
         return self._DatabaseSession(self._session_maker)
