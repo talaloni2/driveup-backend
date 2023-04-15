@@ -11,7 +11,7 @@ from server import app
 
 @pytest.fixture(scope="session", autouse=True)
 def anyio_backend():
-    return 'asyncio'
+    return "asyncio"
 
 
 @pytest.fixture

@@ -35,8 +35,9 @@ def get_db_session_maker(engine: AsyncEngine = Depends(_create_db_engine)) -> as
     return async_sessionmaker(engine, expire_on_commit=False)
 
 
-async def get_db_session(session_maker: async_sessionmaker[AsyncSession] = Depends(get_db_session_maker)) \
-        -> AsyncSession:
+async def get_db_session(
+    session_maker: async_sessionmaker[AsyncSession] = Depends(get_db_session_maker),
+) -> AsyncSession:
     async with session_maker() as session:
         yield session
 

@@ -19,5 +19,5 @@ class ImageNormalizationService:
         if file_name.endswith(".png"):
             return file_name
 
-        file_name = file_name[:file_name.rfind(".")]
+        file_name = file_name[: file_name.rfind(".")]
         return f"{file_name}.png"
