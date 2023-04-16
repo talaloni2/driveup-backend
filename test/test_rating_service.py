@@ -1,10 +1,10 @@
 import pytest
 
-from component_factory import get_rating_service, get_db_session, get_db_session_maker, create_db_engine, \
+from component_factory import get_rating_service, get_db_session_maker, create_db_engine, \
     get_database_url, get_config
 from model.user_rating import UserRating
 from service.rating_service import RatingService
-from test.utils import get_random_email
+from test.utils.utils import get_random_email
 
 pytestmark = pytest.mark.asyncio
 
@@ -36,3 +36,15 @@ async def test_save_rating(rating_service: RatingService, ensure_db_schema: None
     assert final_rating.rating == 3
     assert final_rating.raters_count == 3
     assert final_rating.email == email
+
+
+async def test_delete_rating(rating_service: RatingService, ensure_db_schema: None):
+    email = get_random_email()
+    rating = await rating_service.save(UserRating(email=email, rating=4, raters_count=1))
+    existing = await rating_service.get_by_email(email)
+    await rating_service.delete(rating)
+    not_existing = await rating_service.get_by_email(email)
+
+    assert existing
+    assert not not_existing
+

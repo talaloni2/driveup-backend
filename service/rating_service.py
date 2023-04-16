@@ -34,3 +34,7 @@ class RatingService:
         async with self._session.begin():
             res = await self._session.execute(select(UserRating).where(UserRating.email == email).limit(1))
         return res.scalar_one_or_none()
+
+    async def delete(self, rating: UserRating) -> None:
+        async with self._session.begin():
+            await self._session.delete(rating)
