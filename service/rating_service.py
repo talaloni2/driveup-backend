@@ -3,12 +3,10 @@ import textwrap
 from sqlalchemy import text, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from model.requests.rating import RatingRequest
 from model.user_rating import UserRating, USER_RATING_TABLE
-from service.db_service import DatabaseService
 
-
-SAVE_RATING_QUERY_TEMPLATE = textwrap.dedent(f"""
+SAVE_RATING_QUERY_TEMPLATE = textwrap.dedent(
+    f"""
 INSERT INTO {USER_RATING_TABLE} (email, rating, raters_count)
 VALUES (:email, :rating, 1)
 ON CONFLICT (email) DO UPDATE
@@ -16,7 +14,8 @@ SET
 email = EXCLUDED.email, 
 rating = (EXCLUDED.rating * EXCLUDED.raters_count + {USER_RATING_TABLE}.rating * {USER_RATING_TABLE}.raters_count) / (EXCLUDED.raters_count + {USER_RATING_TABLE}.raters_count),
 raters_count = {USER_RATING_TABLE}.raters_count + 1;
-""")
+"""
+)
 
 
 class RatingService:

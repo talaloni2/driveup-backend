@@ -28,7 +28,11 @@ def get_database_url(config: Config = Depends(get_config)) -> str:
 
 @lru_cache()
 def create_db_engine(db_url: str = Depends(get_database_url)) -> AsyncEngine:
-    return create_async_engine(db_url, future=True, poolclass=NullPool,)
+    return create_async_engine(
+        db_url,
+        future=True,
+        poolclass=NullPool,
+    )
 
 
 @lru_cache()

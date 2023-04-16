@@ -32,7 +32,7 @@ async def test_delete_non_existing_image(test_client: TestClient, ensure_db_sche
 
 async def test_get_image(test_client: TestClient, ensure_db_schema: None):
     with open("test/resources/image-upload.png", mode="rb") as f:
-        resp = await test_client.post("/images/upload", None, CreateImageResponse,files={"image": ("Charmander", f)})
+        resp = await test_client.post("/images/upload", None, CreateImageResponse, files={"image": ("Charmander", f)})
 
     assert resp.id is not None, "Image should have an ID"
     get_resp = await test_client.get(f"/images/{resp.id}")
@@ -40,4 +40,4 @@ async def test_get_image(test_client: TestClient, ensure_db_schema: None):
 
 
 async def test_get_non_existing_image(test_client: TestClient, ensure_db_schema: None):
-    get_resp = await test_client.get(f"/images/{2**25}", assert_status=HTTPStatus.NOT_FOUND)
+    await test_client.get(f"/images/{2**25}", assert_status=HTTPStatus.NOT_FOUND)

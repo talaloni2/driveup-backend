@@ -1,7 +1,6 @@
 import pytest
 
-from component_factory import get_rating_service, get_db_session_maker, create_db_engine, \
-    get_database_url, get_config
+from component_factory import get_rating_service, get_db_session_maker, create_db_engine, get_database_url, get_config
 from model.user_rating import UserRating
 from service.rating_service import RatingService
 from test.utils.utils import get_random_email
@@ -47,4 +46,3 @@ async def test_delete_rating(rating_service: RatingService, ensure_db_schema: No
 
     assert existing
     assert not not_existing
-

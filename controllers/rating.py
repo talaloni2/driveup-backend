@@ -20,7 +20,9 @@ def _to_rating_response(rating: UserRating):
 @router.post("")
 async def rate_user(rating: RatingRequest, rating_service: RatingService = Depends(get_rating_service)):
     if rating.rating < 0 or rating.rating > 5:
-        return JSONResponse(MessageResponse(message="Rating should be between 0 to 5").json(), status_code=HTTPStatus.BAD_REQUEST)
+        return JSONResponse(
+            MessageResponse(message="Rating should be between 0 to 5").json(), status_code=HTTPStatus.BAD_REQUEST
+        )
 
     # TODO: Add validation for rated user existance.
 
