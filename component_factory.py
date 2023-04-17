@@ -21,7 +21,7 @@ def get_config() -> Config:
         db_pass=os.environ["DB_PASS"],
         db_host=os.environ["DB_HOST"],
         db_port=int(os.environ["DB_PORT"]),
-        knapsack_service_url=os.getenv("KNAPSACK_SERVICE_URL", "http://localhost:8001")
+        knapsack_service_url=os.getenv("KNAPSACK_SERVICE_URL", "http://localhost:8001"),
     )
 
 

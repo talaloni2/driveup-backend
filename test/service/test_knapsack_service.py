@@ -26,7 +26,9 @@ async def test_suggest_solution():
     service = KnapsackService(client)
     item = KnapsackItem(id=get_random_string(), value=2, volume=1)
     solutions = {get_random_string(): [item]}
-    client.post = AsyncMock(return_value=_get_response(SuggestedSolution(time=datetime.now(), solutions=solutions).json()))
+    client.post = AsyncMock(
+        return_value=_get_response(SuggestedSolution(time=datetime.now(), solutions=solutions).json())
+    )
 
     result = await service.suggest_solution(get_random_email(), 1, [item])
     assert result.solutions == solutions
@@ -44,7 +46,9 @@ async def test_suggest_solution_error():
 async def test_accept_solution():
     client = AsyncMock(AsyncClient)
     service = KnapsackService(client)
-    client.post = AsyncMock(return_value=_get_response(AcceptSolutionResponse(result=AcceptResult.ACCEPT_SUCCESS).json()))
+    client.post = AsyncMock(
+        return_value=_get_response(AcceptSolutionResponse(result=AcceptResult.ACCEPT_SUCCESS).json())
+    )
 
     accepted = await service.accept_solution(get_random_email(), get_random_string())
     assert accepted
@@ -71,7 +75,9 @@ async def test_accept_solution_error():
 async def test_reject_solution():
     client = AsyncMock(AsyncClient)
     service = KnapsackService(client)
-    client.post = AsyncMock(return_value=_get_response(RejectSolutionResponse(result=RejectResult.REJECT_SUCCESS).json()))
+    client.post = AsyncMock(
+        return_value=_get_response(RejectSolutionResponse(result=RejectResult.REJECT_SUCCESS).json())
+    )
 
     rejected = await service.reject_solutions(get_random_email())
     assert rejected

@@ -45,23 +45,31 @@ async def _usage_example():
 
     user_id = _get_random_string()
 
-    res = await service.suggest_solution(user_id, 4, [
-        KnapsackItem(id=_get_random_string(), value=2, volume=1),
-        KnapsackItem(id=_get_random_string(), value=2, volume=1),
-        KnapsackItem(id=_get_random_string(), value=4, volume=3)
-    ])
+    res = await service.suggest_solution(
+        user_id,
+        4,
+        [
+            KnapsackItem(id=_get_random_string(), value=2, volume=1),
+            KnapsackItem(id=_get_random_string(), value=2, volume=1),
+            KnapsackItem(id=_get_random_string(), value=4, volume=3),
+        ],
+    )
     accepted = await service.accept_solution(user_id, next(iter(res.solutions.keys())))
     assert accepted
 
-    await service.suggest_solution(user_id, 4, [
-        KnapsackItem(id=_get_random_string(), value=2, volume=1),
-        KnapsackItem(id=_get_random_string(), value=2, volume=1),
-        KnapsackItem(id=_get_random_string(), value=4, volume=3)
-    ])
+    await service.suggest_solution(
+        user_id,
+        4,
+        [
+            KnapsackItem(id=_get_random_string(), value=2, volume=1),
+            KnapsackItem(id=_get_random_string(), value=2, volume=1),
+            KnapsackItem(id=_get_random_string(), value=4, volume=3),
+        ],
+    )
     rejected = await service.reject_solutions(user_id)
     assert rejected
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     loop = asyncio.new_event_loop()
     loop.run_until_complete(_test_service())
