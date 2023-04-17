@@ -8,3 +8,5 @@ class Config(NamedTuple):
     db_port: int
     db_user: str
     db_pass: str
+
+    knapsack_service_url: str
