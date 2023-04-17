@@ -24,6 +24,7 @@ async def config() -> Config:
         db_port=original.db_port,
         db_user=original.db_user,
         db_pass=original.db_pass,
+        knapsack_service_url=original.knapsack_service_url
     )
 
 
