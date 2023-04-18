@@ -1,12 +1,9 @@
-from contextlib import asynccontextmanager
 from typing import Optional
 
-from sqlalchemy import delete, select
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
-from sqlalchemy.orm import query
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from model.image import Image
-from service.db_service import DatabaseService
 
 
 class ImageService:

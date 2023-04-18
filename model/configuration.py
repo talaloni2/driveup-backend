@@ -11,3 +11,5 @@ class Config(NamedTuple):
     db_url: Optional[str]
     users_handler_base_url: str
     subscriptions_handler_base_url: str
+
+    knapsack_service_url: str
