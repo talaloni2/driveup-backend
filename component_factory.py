@@ -2,7 +2,6 @@ import os
 from functools import lru_cache
 
 from fastapi import Depends
-from sqlalchemy import PoolProxiedConnection, MetaData
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncEngine, async_sessionmaker, AsyncSession
 
 from model.configuration import Config
@@ -18,11 +17,14 @@ def get_config() -> Config:
         db_pass=os.environ["DB_PASS"],
         db_host=os.environ["DB_HOST"],
         db_port=int(os.environ["DB_PORT"]),
+        db_url=os.environ["DB_URL"] if "DB_URL" in os.environ else None,
+        users_handler_base_url=os.environ["USERS_HANDLER_BASE_URL"],
+        subscriptions_handler_base_url=os.environ["SUBSCRIPTIONS_HANDLER_BASE_URL"],
     )
 
 
 def get_database_url(config: Config = Depends(get_config)) -> str:
-    return f"postgresql+asyncpg://{config.db_user}:{config.db_pass}@{config.db_host}:{config.db_port}/postgres"
+    return config.db_url if config.db_url is not None else f"postgresql+asyncpg://{config.db_user}:{config.db_pass}@{config.db_host}:{config.db_port}/postgres"
 
 
 @lru_cache()
@@ -36,7 +38,7 @@ def get_db_session_maker(engine: AsyncEngine = Depends(_create_db_engine)) -> as
 
 
 async def get_db_session(
-    session_maker: async_sessionmaker[AsyncSession] = Depends(get_db_session_maker),
+        session_maker: async_sessionmaker[AsyncSession] = Depends(get_db_session_maker),
 ) -> AsyncSession:
     async with session_maker() as session:
         yield session
