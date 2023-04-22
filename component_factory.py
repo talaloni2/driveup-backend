@@ -3,11 +3,12 @@ from functools import lru_cache
 
 from fastapi import Depends
 from httpx import AsyncClient
-from sqlalchemy import PoolProxiedConnection, MetaData, NullPool
+from sqlalchemy import NullPool
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncEngine, async_sessionmaker, AsyncSession
 
 from model.configuration import Config
 from service.db_migration_service import DatabaseMigrationService
+from service.geocoding_service import GeocodingService
 from service.image_normalization_service import ImageNormalizationService
 from service.image_service import ImageService
 from service.knapsack_service import KnapsackService
@@ -25,6 +26,7 @@ def get_config() -> Config:
         db_url=os.environ["DB_URL"] if "DB_URL" in os.environ else None,
         users_handler_base_url=os.environ["USERS_HANDLER_BASE_URL"],
         subscriptions_handler_base_url=os.environ["SUBSCRIPTIONS_HANDLER_BASE_URL"],
+        geocoding_api_key=os.getenv("GEOCODING_API_KEY"),
     )
 
 
@@ -73,3 +75,8 @@ def get_rating_service(db_session: AsyncSession = Depends(get_db_session)):
 def get_knapsack_service(config: Config = Depends(get_config)):
     client = AsyncClient(base_url=config.knapsack_service_url)
     return KnapsackService(client)
+
+
+def get_geocoding_service(config: Config = Depends(get_config)):
+    client = AsyncClient(base_url="https://geocode.search.hereapi.com/v1")
+    return GeocodingService(client, config.geocoding_api_key)

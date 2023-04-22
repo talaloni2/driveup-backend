@@ -72,4 +72,4 @@ async def _usage_example():
 
 if __name__ == "__main__":
     loop = asyncio.new_event_loop()
-    loop.run_until_complete(_test_service())
+    loop.run_until_complete(_usage_example())
