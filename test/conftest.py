@@ -25,6 +25,7 @@ async def config() -> Config:
         db_user=original.db_user,
         db_pass=original.db_pass,
         knapsack_service_url=original.knapsack_service_url,
+        geocoding_api_key=original.geocoding_api_key,
     )
 
 

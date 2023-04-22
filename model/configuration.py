@@ -13,3 +13,5 @@ class Config(NamedTuple):
     subscriptions_handler_base_url: str
 
     knapsack_service_url: str
+
+    geocoding_api_key: str

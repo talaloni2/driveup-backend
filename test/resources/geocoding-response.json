@@ -1,0 +1,274 @@
+{
+    "items": [
+        {
+            "title": "דרך השלום, תל אביב - יפו, ישראל",
+            "id": "here:af:streetsection:.jj2UzvwysF5GHWeP5o6ZD",
+            "resultType": "street",
+            "address": {
+                "label": "דרך השלום, תל אביב - יפו, ישראל",
+                "countryCode": "ISR",
+                "countryName": "ישראל",
+                "state": "תל אביב",
+                "county": "תל אביב",
+                "city": "תל אביב - יפו",
+                "street": "דרך השלום"
+            },
+            "position": {
+                "lat": 32.06041,
+                "lng": 34.80635
+            },
+            "mapView": {
+                "west": 34.79452,
+                "south": 32.05971,
+                "east": 34.80768,
+                "north": 32.07253
+            },
+            "scoring": {
+                "queryScore": 0.73,
+                "fieldScore": {
+                    "state": 1.0,
+                    "streets": [
+                        0.9
+                    ]
+                }
+            }
+        },
+        {
+            "title": "דרך השלום, גבעתיים, ישראל",
+            "id": "here:af:street:XKd8olZH2iD.K-nQlD1wSC",
+            "resultType": "street",
+            "address": {
+                "label": "דרך השלום, גבעתיים, ישראל",
+                "countryCode": "ISR",
+                "countryName": "ישראל",
+                "state": "תל אביב",
+                "county": "תל אביב",
+                "city": "גבעתיים",
+                "street": "דרך השלום"
+            },
+            "position": {
+                "lat": 32.06803,
+                "lng": 34.80255
+            },
+            "mapView": {
+                "west": 34.80213,
+                "south": 32.06604,
+                "east": 34.80293,
+                "north": 32.07001
+            },
+            "scoring": {
+                "queryScore": 0.73,
+                "fieldScore": {
+                    "state": 1.0,
+                    "streets": [
+                        0.9
+                    ]
+                }
+            }
+        },
+        {
+            "title": "מחלף השלום, 60000 תל אביב - יפו, ישראל",
+            "id": "here:af:streetsection:bBa4Qm.zjn3JcHKNjTBPcB",
+            "resultType": "street",
+            "address": {
+                "label": "מחלף השלום, 60000 תל אביב - יפו, ישראל",
+                "countryCode": "ISR",
+                "countryName": "ישראל",
+                "state": "תל אביב",
+                "county": "תל אביב",
+                "city": "תל אביב - יפו",
+                "district": "מונטיפיורי",
+                "street": "מחלף השלום",
+                "postalCode": "60000"
+            },
+            "position": {
+                "lat": 32.07272,
+                "lng": 34.79262
+            },
+            "mapView": {
+                "west": 34.79228,
+                "south": 32.06983,
+                "east": 34.79398,
+                "north": 32.07557
+            },
+            "scoring": {
+                "queryScore": 0.73,
+                "fieldScore": {
+                    "state": 1.0,
+                    "streets": [
+                        0.9
+                    ]
+                }
+            }
+        },
+        {
+            "title": "השלום, אזור, ישראל",
+            "id": "here:af:street:q15BLxAT1H6QjQViBpnciD",
+            "resultType": "street",
+            "address": {
+                "label": "השלום, אזור, ישראל",
+                "countryCode": "ISR",
+                "countryName": "ישראל",
+                "state": "תל אביב",
+                "county": "תל אביב",
+                "city": "אזור",
+                "street": "השלום"
+            },
+            "position": {
+                "lat": 32.01674,
+                "lng": 34.81108
+            },
+            "mapView": {
+                "west": 34.80943,
+                "south": 32.0152,
+                "east": 34.81349,
+                "north": 32.0189
+            },
+            "scoring": {
+                "queryScore": 0.73,
+                "fieldScore": {
+                    "state": 1.0,
+                    "streets": [
+                        1.0
+                    ]
+                }
+            }
+        },
+        {
+            "title": "השלום, 47226 רמת השרון, ישראל",
+            "id": "here:af:street:b86IVkdLWRCjx7qK.GmGYB",
+            "resultType": "street",
+            "address": {
+                "label": "השלום, 47226 רמת השרון, ישראל",
+                "countryCode": "ISR",
+                "countryName": "ישראל",
+                "state": "תל אביב",
+                "county": "תל אביב",
+                "city": "רמת השרון",
+                "street": "השלום",
+                "postalCode": "47226"
+            },
+            "position": {
+                "lat": 32.14302,
+                "lng": 34.82957
+            },
+            "mapView": {
+                "west": 34.82948,
+                "south": 32.14261,
+                "east": 34.82975,
+                "north": 32.14345
+            },
+            "scoring": {
+                "queryScore": 0.73,
+                "fieldScore": {
+                    "state": 1.0,
+                    "streets": [
+                        1.0
+                    ]
+                }
+            }
+        },
+        {
+            "title": "סמטת השלום, 58000 חולון, ישראל",
+            "id": "here:af:street:C7u87RywSzhywwVaZz0j0B",
+            "resultType": "street",
+            "address": {
+                "label": "סמטת השלום, 58000 חולון, ישראל",
+                "countryCode": "ISR",
+                "countryName": "ישראל",
+                "state": "תל אביב",
+                "county": "תל אביב",
+                "city": "חולון",
+                "street": "סמטת השלום",
+                "postalCode": "58000"
+            },
+            "position": {
+                "lat": 32.0017,
+                "lng": 34.772
+            },
+            "mapView": {
+                "west": 34.77147,
+                "south": 32.00133,
+                "east": 34.77254,
+                "north": 32.00207
+            },
+            "scoring": {
+                "queryScore": 0.73,
+                "fieldScore": {
+                    "state": 1.0,
+                    "streets": [
+                        0.9
+                    ]
+                }
+            }
+        },
+        {
+            "title": "נוה שלום, 65140 תל אביב - יפו, ישראל",
+            "id": "here:af:street:5abpPt5bxxcejHWfTs81dA",
+            "resultType": "street",
+            "address": {
+                "label": "נוה שלום, 65140 תל אביב - יפו, ישראל",
+                "countryCode": "ISR",
+                "countryName": "ישראל",
+                "state": "תל אביב",
+                "county": "תל אביב",
+                "city": "תל אביב - יפו",
+                "district": "נווה צדק",
+                "street": "נוה שלום",
+                "postalCode": "65140"
+            },
+            "position": {
+                "lat": 32.06189,
+                "lng": 34.76528
+            },
+            "mapView": {
+                "west": 34.76421,
+                "south": 32.06144,
+                "east": 34.76635,
+                "north": 32.06234
+            },
+            "scoring": {
+                "queryScore": 0.7,
+                "fieldScore": {
+                    "state": 1.0,
+                    "streets": [
+                        0.64
+                    ]
+                }
+            }
+        },
+        {
+            "title": "הרכבת, תל אביב - יפו, ישראל",
+            "id": "here:af:street:G9Q1hj3Y0J1wPVttvIKg-B",
+            "resultType": "street",
+            "address": {
+                "label": "הרכבת, תל אביב - יפו, ישראל",
+                "countryCode": "ISR",
+                "countryName": "ישראל",
+                "state": "תל אביב",
+                "county": "תל אביב",
+                "city": "תל אביב - יפו",
+                "street": "הרכבת"
+            },
+            "position": {
+                "lat": 32.06236,
+                "lng": 34.78008
+            },
+            "mapView": {
+                "west": 34.77501,
+                "south": 32.05919,
+                "east": 34.7837,
+                "north": 32.06381
+            },
+            "scoring": {
+                "queryScore": 0.67,
+                "fieldScore": {
+                    "state": 1.0,
+                    "streets": [
+                        0.8
+                    ]
+                }
+            }
+        }
+    ]
+}
