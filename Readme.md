@@ -1,44 +1,53 @@
-#DriveUp Backend
+# DriveUp Backend
 Python Version: 3.10.6
-This repo is the backend for the DriveUp app(for both drivers and riders)<br>
+This repo is the backend for the DriveUp app(for both drivers and riders)
 
-##Running tests
-<b>Make sure docker is installed on your computer<br></b>
-First run these 2 commands:<br>
-* <code>docker run --rm --name postgres-db -e POSTGRES_PASSWORD=<your-pass> -p 5432:5432 -d postgres:13</code><br>
+## Running tests
+Make sure docker is installed on your computer
+First run these 2 commands:
+* `docker run --rm --name postgres-db -e POSTGRES_PASSWORD=<your-pass> -p 5432:5432 -d postgres:13`
 
-execute the following command(while on the repo dir):<br>
-<code>pytest</code>
+execute the following command(while on the repo dir):
+`pytest`
 * Make sure the following variables are used in the shell(or configure it in pycharm test configuration)
   * DB_USER=postgres
   * DB_PASS=<your-pass>
   * DB_HOST=localhost
   * DB_PORT=5432
 
-##Running the app
-<b>Make sure docker is installed on your computer<br></b>
-First run these 2 commands:<br>
-* <code>docker run --rm --name postgres-db -e POSTGRES_PASSWORD=<your-pass> -p 5432:5432 -d postgres:13</code><br>
+## Running with docker
+* Make sure you have docker installed
+* `cd` into project directory
+* Execute `docker-compose up -d`
+* To shut down docker-compose, execute `docker-compose down`
+  * To shut down docker-compose AND remove database data, execute `docker-compose down --volumes`
 
-* Make sure the following variables are used in the shell(or configure it in pycharm test configuration)
-  * DB_USER=postgres
-  * DB_PASS=<your-pass>
-  * DB_HOST=localhost
-  * DB_PORT=5432
+## Running the app
+* Execute the steps of [Running with docker](#Running with docker)
+* Wait fot ~20 seconds for docker-compose to stabilize (In the meantime do the next step)
+* Set shell variables (or update Pycharm's environment variables under run configurations) as below:
+`DB_HOST=localhost`
+`DB_PASS=postgres`
+`DB_PORT=5433`
+`DB_USER=postgres`
+`GEOCODING_API_KEY=027gEg0BjZ2RMhLt4E3maXBxnXlUAAi4A5a0M965ynw`
+`KNAPSACK_SERVICE_URL=http://localhost:8003`
+`PYTHONUNBUFFERED=1`
+`SERVER_PORT=8005`
+`SUBSCRIPTIONS_HANDLER_BASE_URL=http://localhost:8001`
+`USERS_HANDLER_BASE_URL=http://localhost:8000`
+* Execute `python -m main`
 
-Execute the following command from project root dir:<br>
-python -m main
-
-##Running with docker
-Make sure you have docker installed
-* clone the subscription handler repository: <url>https://github.com/avivaloni10/subscriptions_handler</url>
-* <code>cd</code> into the cloned directory.
-* execute <code>docker build -t driveup-subscription-handler:0.0.1 .</code>
-* clone the users handler repository: <url>https://github.com/avivaloni10/users_hundler</url>
-* <code>cd</code> into the cloned directory.
-* execute <code>docker build -t driveup-user-handler:0.0.1 .</code>
-* clone the knapsack solver repository: <url>https://github.com/avivaloni10/subscriptions_handler</url>
-* <code>cd</code> into the knapsack-solver project directory.
-* execute <code>docker build -t knapsack-engine:0.0.1 .</code>
-* execute <code>docker-compose up -d</code>
-  * If you wish to stop the dockers, execute: <code>docker-compose down</code>
+## How to update the docker image after code is completed?
+* Check out the last published version in [here](<url>https://hub.docker.com/repository/docker/talaloni19920/driveup-backend/tags?page=1&ordering=last_updated</url>)
+* Make sure you are a collaborator in this docker repository
+* If this is your first time doing this, execute the following commands:
+  * `docker buildx install`
+  * `docker buildx create --name mybuilder --platform linux/amd64,linux/arm64`
+  * `docker buildx use mybuilder`
+* Now, build the image and push it using docker's buildx:
+  * `docker buildx build --platform linux/amd64,linux/arm64 -t talaloni19920/driveup-backend:<LAST_IMAGE_TAG_PLUS_ONE_IN_LAST_NUMBER> talaloni19920/driveup-backend:latest . --push`
+* After image is pushed, execute the following:
+  * `docker-compose down`
+  * `docker-compose pull`
+  * `docker-compose up -d`
