@@ -30,7 +30,7 @@ execute the following command(while on the repo dir):
 `DB_PASS=postgres`
 `DB_PORT=5433`
 `DB_USER=postgres`
-`GEOCODING_API_KEY=027gEg0BjZ2RMhLt4E3maXBxnXlUAAi4A5a0M965ynw`
+`GEOCODING_API_KEY=<GET_API_KEY_FROM_TEAM_MEMBER>`
 `KNAPSACK_SERVICE_URL=http://localhost:8003`
 `PYTHONUNBUFFERED=1`
 `SERVER_PORT=8005`
