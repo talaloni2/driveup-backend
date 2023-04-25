@@ -31,7 +31,11 @@ def get_config() -> Config:
 
 
 def get_database_url(config: Config = Depends(get_config)) -> str:
-    return config.db_url if config.db_url is not None else f"postgresql+asyncpg://{config.db_user}:{config.db_pass}@{config.db_host}:{config.db_port}/postgres"
+    return (
+        config.db_url
+        if config.db_url is not None
+        else f"postgresql+asyncpg://{config.db_user}:{config.db_pass}@{config.db_host}:{config.db_port}/postgres"
+    )
 
 
 @lru_cache()
@@ -49,7 +53,7 @@ def get_db_session_maker(engine: AsyncEngine = Depends(create_db_engine)) -> asy
 
 
 async def get_db_session(
-        session_maker: async_sessionmaker[AsyncSession] = Depends(get_db_session_maker),
+    session_maker: async_sessionmaker[AsyncSession] = Depends(get_db_session_maker),
 ) -> AsyncSession:
     async with session_maker() as session:
         yield session
