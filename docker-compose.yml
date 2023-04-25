@@ -1,0 +1,155 @@
+version: '3.8'
+services:
+  db:
+    image: postgres:13
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - db:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d
+    ports:
+      - '5433:5432'
+    networks:
+      - everything
+  rabbit:
+    image: rabbitmq:3.8.7-management-alpine
+    restart: always
+    ports:
+      - '15673:15672'
+    volumes:
+      - ~/.docker-conf/rabbitmq/data/:/var/lib/rabbitmq/
+      - ~/.docker-conf/rabbitmq/log/:/var/log/rabbitmq
+    networks:
+      - everything
+    environment:
+      - "RABBITMQ_DEFAULT_PASS=rabbit"
+      - "RABBITMQ_DEFAULT_USER=rabbit"
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:15672" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+  redis:
+    image: 'redis'
+    restart: always
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes
+    networks:
+      - everything
+  knapsack-router:
+    container_name: knapsack-api
+    image: talaloni19920/driveup-knapsack-engine:latest
+    restart: always
+    depends_on:
+      - rabbit
+      - redis
+      - knapsack-solver
+      - subscriptions-backend
+    ports:
+      - '8003:8000'
+    environment:
+      DEPLOYMENT_TYPE: router
+      RABBITMQ_HOST: rabbit
+      RABBITMQ_USER: rabbit
+      RABBITMQ_PASSWORD: rabbit
+      REDIS_HOST: redis
+      SUBSCRIPTION_BACKEND_BASE_URL: 'http://subscriptions-backend:8000'
+    networks:
+      - everything
+
+  knapsack-solver:
+    container_name: knapsack-solver
+    image: talaloni19920/driveup-knapsack-engine:latest
+    restart: always
+    depends_on:
+      - rabbit
+      - redis
+    environment:
+      DEPLOYMENT_TYPE: solver
+      RABBITMQ_HOST: rabbit
+      RABBITMQ_USER: rabbit
+      RABBITMQ_PASSWORD: rabbit
+      REDIS_HOST: redis
+    networks:
+      - everything
+
+  knapsack-maintainer:
+    container_name: knapsack-maintainer
+    image: talaloni19920/driveup-knapsack-engine:latest
+    restart: always
+    depends_on:
+      - rabbit
+      - redis
+      - knapsack-solver
+    environment:
+      DEPLOYMENT_TYPE: maintainer
+      RABBITMQ_HOST: rabbit
+      RABBITMQ_USER: rabbit
+      RABBITMQ_PASSWORD: rabbit
+      REDIS_HOST: redis
+    networks:
+      - everything
+
+  subscriptions-backend:
+    image: talaloni19920/driveup-subscription-handler:latest
+    restart: always
+    depends_on:
+      - db
+    ports:
+      - '8001:8000'
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASS: postgres
+    networks:
+      - everything
+
+  users-backend:
+    image: talaloni19920/driveup-user-handler:latest
+    restart: always
+    depends_on:
+      - db
+    ports:
+      - '8000:8000'
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASS: postgres
+    networks:
+      - everything
+
+  driveup-backend:
+    image: talaloni19920/driveup-backend:latest
+    restart: always
+    depends_on:
+      - users-backend
+      - subscriptions-backend
+      - knapsack-router
+      - db
+    ports:
+      - '8002:8000'
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASS: postgres
+      GEOCODING_API_KEY: GET_FROM_TEAM_MEMBER
+      KNAPSACK_SERVICE_URL: http://knapsack-router:8000
+      PYTHONUNBUFFERED: 1
+      SERVER_PORT: 8000
+      SUBSCRIPTIONS_HANDLER_BASE_URL: http://subscriptions-backend:8000
+      USERS_HANDLER_BASE_URL: http://users-backend:8000
+    networks:
+      - everything
+
+volumes:
+  db:
+    driver: local
+
+networks:
+  everything:
+    driver: bridge

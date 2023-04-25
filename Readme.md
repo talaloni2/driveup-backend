@@ -28,3 +28,17 @@ First run these 2 commands:<br>
 
 Execute the following command from project root dir:<br>
 python -m main
+
+##Running with docker
+Make sure you have docker installed
+* clone the subscription handler repository: <url>https://github.com/avivaloni10/subscriptions_handler</url>
+* <code>cd</code> into the cloned directory.
+* execute <code>docker build -t driveup-subscription-handler:0.0.1 .</code>
+* clone the users handler repository: <url>https://github.com/avivaloni10/users_hundler</url>
+* <code>cd</code> into the cloned directory.
+* execute <code>docker build -t driveup-user-handler:0.0.1 .</code>
+* clone the knapsack solver repository: <url>https://github.com/avivaloni10/subscriptions_handler</url>
+* <code>cd</code> into the knapsack-solver project directory.
+* execute <code>docker build -t knapsack-engine:0.0.1 .</code>
+* execute <code>docker-compose up -d</code>
+  * If you wish to stop the dockers, execute: <code>docker-compose down</code>
