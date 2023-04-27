@@ -1,13 +1,8 @@
 from http import HTTPStatus
-from unittest.mock import patch
 
 import pytest
-from sqlalchemy.exc import IntegrityError
 
-from model.requests.user import UserHandlerCreateUserRequest
 from model.responses.image_responses import CreateImageResponse
-from model.responses.user import UserHandlerResponse
-from model.user_schemas import RequestUser, UserSchema
 from test.utils.test_client import TestClient
 
 pytestmark = pytest.mark.asyncio
