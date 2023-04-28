@@ -1,6 +1,5 @@
-import urllib.parse
-
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.security import OAuth2PasswordBearer
 
 from component_factory import get_geocoding_service, get_user_handler_service
 from service.geocoding_service import GeocodingService
