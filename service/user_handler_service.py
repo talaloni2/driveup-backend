@@ -1,5 +1,6 @@
 from typing import Optional
 
+from fastapi import HTTPException
 from httpx import AsyncClient
 
 from model.requests.user import UserHandlerLoginRequest, UserHandlerCreateUserRequest
@@ -35,6 +36,8 @@ class UserHandlerService:
             plate_number=plate_number
         )
         response = await self._client.post("/users/", json={"parameter": request.dict()})
+        if response.status_code == 400:
+            raise HTTPException(status_code=400, detail=response.json()["detail"])
         response.raise_for_status()
 
         return UserHandlerResponse(**response.json())
