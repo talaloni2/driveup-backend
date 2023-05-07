@@ -11,6 +11,6 @@ class DriveOrder(Base):
     id = Column(Integer, primary_key=True)
     user_id = Column(String)
     passengers_amount = Column(Integer)
-    status = Column(Enum('NEW', 'IN_PROGRESS', 'DONE'), default='NEW')
+    status = Column(String, default='NEW')  # TODO convert to ENUM
     source_location = Column(ARRAY(Float, dimensions=2))
     dest_location = Column(ARRAY(Float, dimensions=2))
