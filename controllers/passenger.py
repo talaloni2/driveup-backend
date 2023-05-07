@@ -18,17 +18,12 @@ def _to_get_drive_response(drive_id: int):
     return GetDriveResponse(drive_id=drive_id)
 
 
-def _address_to_location(address: str):
-    # TODO convert address to array of two floats (lat, lon)
-    return [1, 1]
-
-
 async def add_drive_order(
     order: PassengerDriveOrderRequest, passenger_service: PassengerService = Depends(get_passenger_service)
 ) -> DriveOrderResponse:
     db_drive_order = DriveOrder(user_id=order.user_id, passengers_amount=order.passengers_amount,
-                                source_location=_address_to_location(order.source_location),
-                                dest_location=_address_to_location(order.dest_location),
+                                source_location=order.source_location,
+                                dest_location=order.dest_location,
     )
     order = await passenger_service.save(db_drive_order)
     return _to_drive_order_response(order)

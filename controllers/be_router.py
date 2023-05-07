@@ -8,10 +8,9 @@ from model.requests.passenger import PassengerDriveOrderRequest, PassengerGetDri
 
 router = APIRouter()
 
-# TODO handle backend routing
 
-@router.post("/newDriveOrder")
-async def route_new_request(
+@router.post("/passenger-order-drive")
+async def handle_passenger_new_order(
     request: PassengerDriveOrderRequest,
 ):
     await passenger.add_drive_order(request)
@@ -19,7 +18,7 @@ async def route_new_request(
     )
 
 
-@router.post("/getDrive")
+@router.post("/passenger-get-drive")
 async def route_new_request(
     request: PassengerGetDrive,
 ):
