@@ -14,6 +14,8 @@ from service.image_service import ImageService
 from service.knapsack_service import KnapsackService
 from service.rating_service import RatingService
 from service.passenger_service import PassengerService
+from service.subscription_handler_service import SubscriptionHandlerService
+from service.user_handler_service import UserHandlerService
 
 
 def get_config() -> Config:
@@ -79,6 +81,16 @@ def get_rating_service(db_session: AsyncSession = Depends(get_db_session)):
 
 def get_passenger_service(db_session: AsyncSession = Depends(get_db_session)):
     return PassengerService(db_session)
+
+
+def get_user_handler_service(config: Config = Depends(get_config)):
+    client = AsyncClient(base_url=config.users_handler_base_url)
+    return UserHandlerService(client)
+
+
+def get_subscription_handler_service(config: Config = Depends(get_config)):
+    client = AsyncClient(base_url=config.subscriptions_handler_base_url)
+    return SubscriptionHandlerService(client)
 
 
 def get_knapsack_service(config: Config = Depends(get_config)):

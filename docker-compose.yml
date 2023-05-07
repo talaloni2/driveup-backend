@@ -132,6 +132,7 @@ services:
       - db
     ports:
       - '8002:8000'
+      - '80:8000'
     environment:
       DB_HOST: db
       DB_PORT: 5432
