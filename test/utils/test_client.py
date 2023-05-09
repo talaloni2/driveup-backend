@@ -5,7 +5,7 @@ from httpx import AsyncClient, Response
 
 from model.base_dto import BaseModel
 from model.responses.user import UserHandlerResponse
-from model.user_schemas import RequestUser
+from model.user_schemas import RequestUser, UserSchema
 
 T = TypeVar("T", bound=BaseModel)
 _RESP = Union[T, bytes]
@@ -61,7 +61,7 @@ class TestClient:
 
     async def get_token(self):
         try:
-            await self.post(
+            resp = await self.post(
                 url="/users/",
                 req_body=RequestUser(parameter=UserSchema(
                     car_color='Black',
@@ -75,6 +75,7 @@ class TestClient:
                 resp_model=UserHandlerResponse,
                 assert_status=None,
             )
+            print(resp)
         except Exception as e:
             print(e)
         return (await self.post(
