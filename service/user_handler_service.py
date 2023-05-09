@@ -11,10 +11,11 @@ class UserHandlerService:
     def __init__(self, http_client: AsyncClient):
         self._client: AsyncClient = http_client
 
-    async def login(self, username: str, password: str) -> dict:
+    async def login(self, username: str, password: str) -> Optional[dict]:
         request = UserHandlerLoginRequest(username=username, password=password)
         response = await self._client.post("/token", data=request.dict())
-        response.raise_for_status()
+        if response.status_code != 200:
+            return None
 
         return response.json()
 
