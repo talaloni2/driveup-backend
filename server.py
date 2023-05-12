@@ -14,6 +14,8 @@ app = FastAPI()
 app.include_router(rating_router, prefix="/rating", tags=["rating"], dependencies=[Depends(authenticated_user)])
 app.include_router(images_router, prefix="/images", tags=["images"], dependencies=[Depends(authenticated_user)])
 app.include_router(users_router, prefix="/users", tags=["users"])
-app.include_router(users_map_router, prefix="/users_map", tags=["users_map"], dependencies=[Depends(authenticated_user)])
+app.include_router(
+    users_map_router, prefix="/users_map", tags=["users_map"], dependencies=[Depends(authenticated_user)]
+)
 app.include_router(geocoding_router, prefix="/geocode", tags=["geocode"], dependencies=[Depends(authenticated_user)])
 app.include_router(login_router, tags=["users"])

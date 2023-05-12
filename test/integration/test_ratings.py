@@ -11,7 +11,6 @@ pytestmart = pytest.mark.asyncio
 
 
 async def test_post_rating(test_client: TestClient):
-    
     rating_request = RatingRequest(
         email=get_random_email(),
         rating=1,
@@ -20,19 +19,16 @@ async def test_post_rating(test_client: TestClient):
         url="/rating",
         req_body=rating_request,
         resp_model=RatingResponse,
-        
     )
     assert resp.email == rating_request.email
     assert rating_request.rating
 
     await test_client.delete(
         url=f"/rating/{rating_request.email}",
-        
     )
 
 
 async def test_get_rating(test_client: TestClient):
-    
     rating_request = RatingRequest(
         email=get_random_email(),
         rating=1,
@@ -41,12 +37,10 @@ async def test_get_rating(test_client: TestClient):
         url="/rating",
         req_body=rating_request,
         resp_model=RatingResponse,
-        
     )
     resp = await test_client.get(
         url=f"/rating/{rating_request.email}",
         resp_model=RatingResponse,
-        
     )
     assert resp.email == rating_request.email
     assert resp.rating == rating_request.rating
@@ -54,7 +48,6 @@ async def test_get_rating(test_client: TestClient):
 
 
 async def test_delete_rating(test_client: TestClient):
-    
     rating_request = RatingRequest(
         email=get_random_email(),
         rating=1,
@@ -63,18 +56,14 @@ async def test_delete_rating(test_client: TestClient):
         url="/rating",
         req_body=rating_request,
         resp_model=RatingResponse,
-        
     )
     await test_client.get(
         url=f"/rating/{rating_request.email}",
-        
     )
     await test_client.delete(
         url=f"/rating/{rating_request.email}",
-        
     )
     await test_client.get(
         url=f"/rating/{rating_request.email}",
         assert_status=HTTPStatus.NOT_FOUND,
-        
     )

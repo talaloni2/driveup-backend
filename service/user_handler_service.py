@@ -25,8 +25,16 @@ class UserHandlerService:
 
         return UserHandlerResponse(**response.json())
 
-    async def create_user(self, email: str, password: str, phone_number: str, full_name: str, car_model: Optional[str],
-                          car_color: Optional[str], plate_number: Optional[str]) -> UserHandlerResponse:
+    async def create_user(
+        self,
+        email: str,
+        password: str,
+        phone_number: str,
+        full_name: str,
+        car_model: Optional[str],
+        car_color: Optional[str],
+        plate_number: Optional[str],
+    ) -> UserHandlerResponse:
         request = UserHandlerCreateUserRequest(
             email=email,
             password=password,
@@ -34,7 +42,7 @@ class UserHandlerService:
             full_name=full_name,
             car_model=car_model,
             car_color=car_color,
-            plate_number=plate_number
+            plate_number=plate_number,
         )
         response = await self._client.post("/users/", json={"parameter": request.dict()})
         if response.status_code == 400:

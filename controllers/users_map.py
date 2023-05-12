@@ -8,7 +8,7 @@ router = APIRouter()
 
 @router.get("/{user_email}")
 async def get_by_user_email(
-        email: str,
-        subscription_handler_service: SubscriptionHandlerService = Depends(get_subscription_handler_service),
+    email: str,
+    subscription_handler_service: SubscriptionHandlerService = Depends(get_subscription_handler_service),
 ):
     return await subscription_handler_service.get_by_user_email(email=email)

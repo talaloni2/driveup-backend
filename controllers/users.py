@@ -19,15 +19,15 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 @router.post("/")
 async def create(
-        request: RequestUser,
-        user_handler_service: UserHandlerService = Depends(get_user_handler_service),
+    request: RequestUser,
+    user_handler_service: UserHandlerService = Depends(get_user_handler_service),
 ):
     return await user_handler_service.create_user(**json.loads(request.parameter.json()))
 
 
 @router.get("/validate_token")
 async def validate_token(
-        token: str = Depends(oauth2_scheme),
-        user_handler_service: UserHandlerService = Depends(get_user_handler_service),
+    token: str = Depends(oauth2_scheme),
+    user_handler_service: UserHandlerService = Depends(get_user_handler_service),
 ):
     return await user_handler_service.validate_token(token)
