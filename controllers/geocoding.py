@@ -8,7 +8,7 @@ router = APIRouter()
 
 @router.get("")
 async def geocode_address(
-        address: str,
-        geocoding_service: GeocodingService = Depends(get_geocoding_service),
-        ):
+    address: str,
+    geocoding_service: GeocodingService = Depends(get_geocoding_service),
+):
     return await geocoding_service.geocode_address(address)

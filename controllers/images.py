@@ -15,11 +15,10 @@ router = APIRouter()
 
 @router.post("/upload")
 async def upload_image(
-        image: UploadFile,
-        image_service: ImageService = Depends(get_image_service),
-        normalizer: ImageNormalizationService = Depends(get_image_normalization_service),
+    image: UploadFile,
+    image_service: ImageService = Depends(get_image_service),
+    normalizer: ImageNormalizationService = Depends(get_image_normalization_service),
 ):
-
     image_data = normalizer.normalize(await image.read())
     image_instance = Image(image_data=image_data, filename=normalizer.normalize_file_name(image.filename))
 
@@ -30,10 +29,9 @@ async def upload_image(
 
 @router.delete("/{id}")
 async def delete_image(
-        id: int,
-        image_service: ImageService = Depends(get_image_service),
+    id: int,
+    image_service: ImageService = Depends(get_image_service),
 ):
-
     img = await image_service.get_image(id)
     if not img:
         return JSONResponse(MessageResponse(message="Image not found").json(), status_code=HTTPStatus.NOT_FOUND)
@@ -44,10 +42,9 @@ async def delete_image(
 
 @router.get("/{id}")
 async def get_image_by_id(
-        id: int,
-        image_service: ImageService = Depends(get_image_service),
+    id: int,
+    image_service: ImageService = Depends(get_image_service),
 ):
-
     img = await image_service.get_image(id)
     if not img:
         return JSONResponse(MessageResponse(message="Image not found").json(), status_code=HTTPStatus.NOT_FOUND)
