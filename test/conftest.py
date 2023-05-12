@@ -1,10 +1,13 @@
 import asyncio
 from typing import Generator
+from unittest.mock import AsyncMock
 
 import pytest
+from fastapi import HTTPException
 from httpx import AsyncClient
 
 from component_factory import get_config, get_migration_service
+from controllers.utils import AuthenticatedUser, authenticated_user
 from model.configuration import Config
 from server import app
 from test.utils.test_client import TestClient
@@ -39,8 +42,24 @@ def event_loop(request) -> Generator:
 
 @pytest.fixture
 async def test_client(event_loop) -> TestClient:
+    app.dependency_overrides[authenticated_user] = lambda: AuthenticatedUser(email="sheker@g.com") # Override auth
     async with AsyncClient(app=app, base_url="http://test") as client:
         yield TestClient(client)
+
+    del app.dependency_overrides[authenticated_user]
+
+
+@pytest.fixture
+async def test_client_unauthenticated(test_client):
+    unauth = HTTPException(status_code=401, detail="Unauthorized")
+    app.dependency_overrides[authenticated_user] = AsyncMock(side_effect=unauth)
+    return
+
+@pytest.fixture()
+def authenticated_passenger(test_client):
+    app.dependency_overrides[authenticated_user] = """passenger"""
+    yield
+    del app.dependency_overrides["authenticated_user"]
 
 
 @pytest.fixture(scope="session")

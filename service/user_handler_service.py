@@ -13,9 +13,9 @@ class UserHandlerService:
 
     async def login(self, username: str, password: str) -> Optional[dict]:
         request = UserHandlerLoginRequest(username=username, password=password)
-        response = await self._client.post("/token", data=request.dict())
+        response = await self._client.post("/users/token", data=request.dict())
         if response.status_code != 200:
-            return None
+            raise HTTPException(status_code=response.status_code, detail=response.json())
 
         return response.json()
 

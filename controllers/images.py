@@ -4,6 +4,7 @@ from fastapi import APIRouter, UploadFile, Depends
 from fastapi.responses import JSONResponse, Response
 
 from component_factory import get_image_service, get_image_normalization_service
+from controllers.utils import authenticated_user, AuthenticatedUser
 from model.image import Image
 from model.responses.error_response import MessageResponse
 from model.responses.image_responses import CreateImageResponse
@@ -19,7 +20,6 @@ async def upload_image(
         image_service: ImageService = Depends(get_image_service),
         normalizer: ImageNormalizationService = Depends(get_image_normalization_service),
 ):
-
     image_data = normalizer.normalize(await image.read())
     image_instance = Image(image_data=image_data, filename=normalizer.normalize_file_name(image.filename))
 

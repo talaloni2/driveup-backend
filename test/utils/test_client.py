@@ -58,29 +58,3 @@ class TestClient:
             return resp_model(**resp.json())
 
         return resp
-
-    async def get_token(self):
-        try:
-            resp = await self.post(
-                url="/users/",
-                req_body=RequestUser(parameter=UserSchema(
-                    car_color='Black',
-                    car_model='Hatzil',
-                    email='a@gmail.com',
-                    full_name='Dov Sherman',
-                    password='Aa111111',
-                    phone_number='0541112222',
-                    plate_number='0000000',
-                )),
-                resp_model=UserHandlerResponse,
-                assert_status=None,
-            )
-            print(resp)
-        except Exception as e:
-            print(e)
-        return (await self.post(
-            url="/token",
-            req_body=None,
-            resp_model=None,
-            data={"username": "a@gmail.com", "password": "Aa111111"},
-        )).json()['access_token']
