@@ -36,7 +36,7 @@ def get_database_url(config: Config = Depends(get_config)) -> str:
     return (
         config.db_url
         if config.db_url is not None
-        else f"postgresql+asyncpg://{config.db_user}:{config.db_pass}@{config.db_host}:{config.db_port}/postgres"
+        else f"postgresql+asyncpg://{config.db_user}:{config.db_pass}@{config.db_host}:{config.db_port}/drive_up"
     )
 
 
