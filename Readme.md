@@ -46,7 +46,7 @@ execute the following command(while on the repo dir):
   * `docker buildx create --name mybuilder --platform linux/amd64,linux/arm64`
   * `docker buildx use mybuilder`
 * Now, build the image and push it using docker's buildx:
-  * `docker buildx build --platform linux/amd64,linux/arm64 -t talaloni19920/driveup-backend:<LAST_IMAGE_TAG_PLUS_ONE_IN_LAST_NUMBER> talaloni19920/driveup-backend:latest . --push`
+  * `docker buildx build --platform linux/amd64,linux/arm64 -t talaloni19920/driveup-backend:<LAST_IMAGE_TAG_PLUS_ONE_IN_LAST_NUMBER> -t talaloni19920/driveup-backend:latest . --push`
 * After image is pushed, execute the following:
   * `docker-compose down`
   * `docker-compose pull`

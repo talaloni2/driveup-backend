@@ -28,7 +28,10 @@ async def upload_image(
 
 
 @router.delete("/{id}")
-async def delete_image(id: int, image_service: ImageService = Depends(get_image_service)):
+async def delete_image(
+    id: int,
+    image_service: ImageService = Depends(get_image_service),
+):
     img = await image_service.get_image(id)
     if not img:
         return JSONResponse(MessageResponse(message="Image not found").json(), status_code=HTTPStatus.NOT_FOUND)
@@ -38,7 +41,10 @@ async def delete_image(id: int, image_service: ImageService = Depends(get_image_
 
 
 @router.get("/{id}")
-async def get_image_by_id(id: int, image_service: ImageService = Depends(get_image_service)):
+async def get_image_by_id(
+    id: int,
+    image_service: ImageService = Depends(get_image_service),
+):
     img = await image_service.get_image(id)
     if not img:
         return JSONResponse(MessageResponse(message="Image not found").json(), status_code=HTTPStatus.NOT_FOUND)

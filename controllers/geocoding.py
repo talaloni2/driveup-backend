@@ -1,5 +1,3 @@
-import urllib.parse
-
 from fastapi import APIRouter, Depends
 
 from component_factory import get_geocoding_service
@@ -9,7 +7,8 @@ router = APIRouter()
 
 
 @router.get("")
-async def geocode_address(address: str, geocoding_service: GeocodingService = Depends(get_geocoding_service)):
-    # if not _is_address_urlencoded(address):
-    #     address = urllib.parse.urlencode(address)
+async def geocode_address(
+    address: str,
+    geocoding_service: GeocodingService = Depends(get_geocoding_service),
+):
     return await geocoding_service.geocode_address(address)

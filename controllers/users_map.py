@@ -1,13 +1,14 @@
-import requests
 from fastapi import APIRouter, Depends
 
-from component_factory import get_config
-from model.configuration import Config
-from model.user_schemas import RequestLogin, RequestUser
+from component_factory import get_subscription_handler_service
+from service.subscription_handler_service import SubscriptionHandlerService
 
 router = APIRouter()
 
 
 @router.get("/{user_email}")
-async def get_by_user_email(user_email: str, config: Config = Depends(get_config)):
-    return requests.get(f"{config.subscriptions_handler_base_url}/users_map/{user_email}").json()
+async def get_by_user_email(
+    email: str,
+    subscription_handler_service: SubscriptionHandlerService = Depends(get_subscription_handler_service),
+):
+    return await subscription_handler_service.get_by_user_email(email=email)

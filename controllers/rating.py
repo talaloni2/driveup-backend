@@ -18,7 +18,10 @@ def _to_rating_response(rating: UserRating):
 
 
 @router.post("")
-async def rate_user(rating: RatingRequest, rating_service: RatingService = Depends(get_rating_service)):
+async def rate_user(
+    rating: RatingRequest,
+    rating_service: RatingService = Depends(get_rating_service),
+):
     if rating.rating < 0 or rating.rating > 5:
         return JSONResponse(
             MessageResponse(message="Rating should be between 0 to 5").json(), status_code=HTTPStatus.BAD_REQUEST
@@ -32,7 +35,10 @@ async def rate_user(rating: RatingRequest, rating_service: RatingService = Depen
 
 
 @router.get("/{email}")
-async def get_user_rating(email: str, rating_service: RatingService = Depends(get_rating_service)):
+async def get_user_rating(
+    email: str,
+    rating_service: RatingService = Depends(get_rating_service),
+):
     rating = await rating_service.get_by_email(email)
     if not rating:
         return JSONResponse(MessageResponse(message="User not found").json(), status_code=HTTPStatus.NOT_FOUND)
@@ -41,7 +47,10 @@ async def get_user_rating(email: str, rating_service: RatingService = Depends(ge
 
 
 @router.delete("/{email}")
-async def delete_user_rating(email: str, rating_service: RatingService = Depends(get_rating_service)):
+async def delete_user_rating(
+    email: str,
+    rating_service: RatingService = Depends(get_rating_service),
+):
     rating = await rating_service.get_by_email(email)
     if not rating:
         return JSONResponse(MessageResponse(message="User not found").json(), status_code=HTTPStatus.NOT_FOUND)

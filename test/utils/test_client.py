@@ -4,6 +4,8 @@ from typing import TypeVar, Optional, Coroutine, Any, Type, Union
 from httpx import AsyncClient, Response
 
 from model.base_dto import BaseModel
+from model.responses.user import UserHandlerResponse
+from model.user_schemas import RequestUser, UserSchema
 
 T = TypeVar("T", bound=BaseModel)
 _RESP = Union[T, bytes]
@@ -55,4 +57,4 @@ class TestClient:
         if resp_model:
             return resp_model(**resp.json())
 
-        return resp.content
+        return resp
