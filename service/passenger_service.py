@@ -18,14 +18,13 @@ class PassengerService:
         self._session = session
 
     async def save(self, order: DriveOrder) -> DriveOrder:
-        params = {"email": order.email, "passengers_amount": order.passengers_amount, "status": "NEW",
-                  "source_location": [order.source_location.lat, order.source_location.lon],
-                  "dest_location": [order.dest_location.lat, order.dest_location.lon]}
 
         async with self._session.begin():
-            await self._session.execute(text(SAVE_RATING_QUERY_TEMPLATE), params=params)
+            self._session.add(order)
 
-        return await self.get_by_user_email(order.email)
+        await self._session.refresh(order)
+
+        return order
 
     async def get_by_user_email(self, email: str) -> DriveOrder:
         async with self._session.begin():

@@ -12,5 +12,5 @@ class PassengerDriveOrderRequest(BaseModel):
 
 
 class PassengerGetDrive(BaseModel):
-    user_id: int
+    user_id: str
     order_id: int

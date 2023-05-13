@@ -34,16 +34,15 @@ async def test_post_add_drive_order(test_client: TestClient):
 
 
 async def test_get_drive(test_client: TestClient):
-    token = await test_client.get_token()
-    rating_request = PassengerGetDrive(
-        email=EMAIL,
+    # token = await test_client.get_token()
+    getDriveRequest = PassengerGetDrive(
+        user_id=EMAIL,
         order_id=ORDER_ID
     )
-    resp = await test_client.get(
-        url="/passenger-get-drive",
-        req_body=rating_request,
+    resp = await test_client.post(
+        url="/passenger/get-drive",
+        req_body=getDriveRequest,
         resp_model=GetDriveResponse,
-        headers={'Authorization': f"Bearer {token}"},
     )
     assert hasattr(resp, "order_id")
 
