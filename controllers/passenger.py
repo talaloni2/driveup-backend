@@ -18,8 +18,10 @@ def _to_drive_order_response(order: DriveOrder):
     return DriveOrderResponse(order_id=order.id)
 
 
-def _to_get_drive_response(drive_id: int):
-    return GetDriveResponse(drive_id=drive_id)
+def _to_get_drive_response(order: DriveOrder):
+    if order:
+        return GetDriveResponse(drive_id=order.drive_id)
+    return GetDriveResponse(drive_id=None)
 
 @router.post("/order-drive")
 async def handle_add_drive_order_request(
@@ -43,18 +45,14 @@ async def add_drive_order(order_request: PassengerDriveOrderRequest, passenger_s
 async def handle_get_drive_request(
     request: PassengerGetDrive, passenger_service: PassengerService = Depends(get_passenger_service)
 ):
-    drive_id = await get_drive_by_order_id(request, passenger_service)
-    return JSONResponse(
-        status_code=http.HTTPStatus.OK,
-        content={"drive_id": drive_id},
-    )
+    drive_order_response = await get_drive_by_order_id(request, passenger_service)
+    return drive_order_response
 
 
 async def get_drive_by_order_id(
     request: PassengerGetDrive, passenger_service: PassengerService
-) -> DriveOrderResponse:
-    # drive_id = await get_drive_by_order_id(request)
+) -> GetDriveResponse:
 
     order = await passenger_service.get_by_order_id(request.order_id)
-    return _to_drive_order_response(order)
+    return _to_get_drive_response(order)
 

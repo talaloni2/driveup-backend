@@ -15,3 +15,5 @@ class DriveOrder(Base):
     status = Column(String, default='NEW')  # TODO convert to ENUM
     source_location = Column(ARRAY(Float, dimensions=1))
     dest_location = Column(ARRAY(Float, dimensions=1))
+    drive_id = Column(Integer, default=None)
+
