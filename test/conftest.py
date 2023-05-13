@@ -59,10 +59,8 @@ async def test_client_unauthenticated(test_client):
 @pytest.fixture()
 def authenticated_passenger(test_client):
     app.dependency_overrides[authenticated_user] = """passenger"""
-    yield
-    del app.dependency_overrides["authenticated_user"]
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="session", autouse=True)
 async def ensure_db_schema(event_loop) -> None:
     await get_migration_service().migrate()

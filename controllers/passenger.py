@@ -1,4 +1,6 @@
 from fastapi import APIRouter, Depends
+import http
+
 
 from component_factory import get_passenger_service
 
@@ -6,6 +8,8 @@ from model.requests.passenger import PassengerDriveOrderRequest, PassengerGetDri
 from model.drive_order import DriveOrder
 from model.responses.passenger import DriveOrderResponse, GetDriveResponse
 from service.passenger_service import PassengerService
+from fastapi.responses import JSONResponse
+
 
 router = APIRouter()
 
@@ -17,21 +21,39 @@ def _to_drive_order_response(order: DriveOrder):
 def _to_get_drive_response(drive_id: int):
     return GetDriveResponse(drive_id=drive_id)
 
-
-async def add_drive_order(
-    order: PassengerDriveOrderRequest, passenger_service: PassengerService = Depends(get_passenger_service)
+@router.post("/order-drive")
+async def handle_add_drive_order_request(
+    order_request: PassengerDriveOrderRequest,  passenger_service: PassengerService = Depends(get_passenger_service)
 ) -> DriveOrderResponse:
-    db_drive_order = DriveOrder(user_id=order.user_id, passengers_amount=order.passengers_amount,
-                                source_location=order.source_location,
-                                dest_location=order.dest_location,
-    )
-    order = await passenger_service.save(db_drive_order)
-    return _to_drive_order_response(order)
 
+    drive_order_response = await add_drive_order(order_request, passenger_service)
+    return drive_order_response
+
+
+async def add_drive_order(order_request: PassengerDriveOrderRequest, passenger_service: PassengerService):
+        db_drive_order = DriveOrder(email=order_request.email, passengers_amount=order_request.passengers_amount,
+                                    source_location=order_request.source_location,
+                                    dest_location=order_request.dest_location)
+
+        order = await passenger_service.save(db_drive_order)
+        return _to_drive_order_response(order)
+
+
+@router.post("/passenger-get-drive")
+async def handle_get_drive_request(
+    request: PassengerGetDrive,
+):
+    drive_id = await get_drive_by_order_id(request)
+    return JSONResponse(
+        status_code=http.HTTPStatus.OK,
+        content={"drive_id": drive_id},
+    )
 
 async def get_drive_by_order_id(
-    order: PassengerGetDrive, passenger_service: PassengerService = Depends(get_passenger_service)
+    request: PassengerGetDrive, passenger_service: PassengerService = Depends(get_passenger_service)
 ) -> DriveOrderResponse:
-    order = await passenger_service.get_by_order_id(order.order_id)
+    drive_id = await get_drive_by_order_id(request)
+
+    order = await passenger_service.get_by_order_id(request.order_id)
     return _to_drive_order_response(order)
 

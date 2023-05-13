@@ -5,7 +5,7 @@ class Address(BaseModel):
     lat: int
 
 class PassengerDriveOrderRequest(BaseModel):
-    user_id: int
+    email: str
     passengers_amount: int
     source_location: Address
     dest_location: Address

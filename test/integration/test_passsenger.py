@@ -9,27 +9,26 @@ from test.utils.utils import get_random_email
 
 pytestmart = pytest.mark.asyncio
 
-USER_ID = 1
+EMAIL = "a@b.com"
 PASSENGER_AMOUNT = 1
-ADDRESS1 = Address(1, 1)
-ADDRESS2 = Address(2, 2)
+ADDRESS1 = Address(lon=1, lat=1)
+ADDRESS2 = Address(lon=2, lat=2)
 ORDER_ID = 1
 
 
 
 async def test_post_add_drive_order(test_client: TestClient):
-    token = await test_client.get_token()
+    #token = await test_client.get_token()
     order_new_drive_request = PassengerDriveOrderRequest(
-        user_id=USER_ID,
+        email=EMAIL,
         passengers_amount=PASSENGER_AMOUNT,
         source_location=ADDRESS1,
         dest_location=ADDRESS2
     )
     resp = await test_client.post(
-        url="/passenger-order-drive",
+        url="/passenger/order-drive",
         req_body=order_new_drive_request,
         resp_model=DriveOrderResponse,
-        headers={'Authorization': f"Bearer {token}"},
     )
     assert hasattr(resp, "order_id")
 
@@ -37,7 +36,7 @@ async def test_post_add_drive_order(test_client: TestClient):
 async def test_get_drive(test_client: TestClient):
     token = await test_client.get_token()
     rating_request = PassengerGetDrive(
-        user_id=USER_ID,
+        email=EMAIL,
         order_id=ORDER_ID
     )
     resp = await test_client.get(
