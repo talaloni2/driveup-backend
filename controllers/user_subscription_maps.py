@@ -20,14 +20,8 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 @router.get("/")
 async def get_user_subscription_maps(
-        token: str = Depends(oauth2_scheme),
-        user_handler_service: UserHandlerService = Depends(get_user_handler_service),
         subscription_handler_service: SubscriptionHandlerService = Depends(get_subscription_handler_service),
 ):
-    is_token_valid = await user_handler_service.validate_token(token)
-    if is_token_valid.code != 200 or is_token_valid.result["is_valid"] is not True:
-        raise HTTPException(status_code=401, detail="Unauthorized")
-
     response = await subscription_handler_service.get_user_subscription_maps()
     if response.code != 200:
         raise HTTPException(status_code=response.code, detail=response.detail)
@@ -38,14 +32,8 @@ async def get_user_subscription_maps(
 @router.post("/")
 async def create_user_subscription_map(
         request: RequestUserSubscriptionMap,
-        token: str = Depends(oauth2_scheme),
-        user_handler_service: UserHandlerService = Depends(get_user_handler_service),
         subscription_handler_service: SubscriptionHandlerService = Depends(get_subscription_handler_service),
 ):
-    is_token_valid = await user_handler_service.validate_token(token)
-    if is_token_valid.code != 200 or is_token_valid.result["is_valid"] is not True:
-        raise HTTPException(status_code=401, detail="Unauthorized")
-
     response = await subscription_handler_service.create_user_subscription_map(**json.loads(request.parameter.json()))
     if response.code != 200:
         raise HTTPException(status_code=response.code, detail=response.detail)
@@ -57,14 +45,8 @@ async def create_user_subscription_map(
 async def get_user_subscription_map(
         user_email: str,
         subscription_name: str,
-        token: str = Depends(oauth2_scheme),
-        user_handler_service: UserHandlerService = Depends(get_user_handler_service),
         subscription_handler_service: SubscriptionHandlerService = Depends(get_subscription_handler_service),
 ):
-    is_token_valid = await user_handler_service.validate_token(token)
-    if is_token_valid.code != 200 or is_token_valid.result["is_valid"] is not True:
-        raise HTTPException(status_code=401, detail="Unauthorized")
-
     response = await subscription_handler_service.get_user_subscription_map(email=user_email, name=subscription_name)
     if response.code != 200:
         raise HTTPException(status_code=response.code, detail=response.detail)
@@ -76,14 +58,8 @@ async def get_user_subscription_map(
 async def delete_user_subscription_map(
         user_email: str,
         subscription_name: str,
-        token: str = Depends(oauth2_scheme),
-        user_handler_service: UserHandlerService = Depends(get_user_handler_service),
         subscription_handler_service: SubscriptionHandlerService = Depends(get_subscription_handler_service),
 ):
-    is_token_valid = await user_handler_service.validate_token(token)
-    if is_token_valid.code != 200 or is_token_valid.result["is_valid"] is not True:
-        raise HTTPException(status_code=401, detail="Unauthorized")
-
     response = await subscription_handler_service.delete_user_subscription_map(email=user_email, name=subscription_name)
     if response.code != 200:
         raise HTTPException(status_code=response.code, detail=response.detail)
