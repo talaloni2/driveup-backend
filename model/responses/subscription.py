@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Union
 
 from model.base_dto import BaseModel
 from model.requests.knapsack import KnapsackItem
@@ -10,5 +10,5 @@ class SubscriptionHandlerResponse(BaseModel):
     code: Optional[int]
     status: Optional[str]
     message: Optional[str]
-    result: Optional[dict]
+    result: Optional[Union[list, dict]]
     detail: Optional[str]

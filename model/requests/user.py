@@ -16,3 +16,10 @@ class UserHandlerCreateUserRequest(BaseModel):
     car_model: Optional[str] = None
     car_color: Optional[str] = None
     plate_number: Optional[str] = None
+
+
+class UserHandlerUpdateUserRequest(BaseModel):
+    full_name: Optional[str] = None
+    car_model: Optional[str] = None
+    car_color: Optional[str] = None
+    plate_number: Optional[str] = None
