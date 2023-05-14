@@ -13,6 +13,7 @@ from service.image_normalization_service import ImageNormalizationService
 from service.image_service import ImageService
 from service.knapsack_service import KnapsackService
 from service.rating_service import RatingService
+from service.passenger_service import PassengerService
 from service.subscription_handler_service import SubscriptionHandlerService
 from service.user_handler_service import UserHandlerService
 
@@ -76,6 +77,10 @@ def get_image_normalization_service():
 
 def get_rating_service(db_session: AsyncSession = Depends(get_db_session)):
     return RatingService(db_session)
+
+
+def get_passenger_service(db_session: AsyncSession = Depends(get_db_session)):
+    return PassengerService(db_session)
 
 
 def get_user_handler_service(config: Config = Depends(get_config)):
