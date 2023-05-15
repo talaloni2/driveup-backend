@@ -3,7 +3,9 @@ from fastapi import FastAPI, Depends
 from controllers.geocoding import router as geocoding_router
 from controllers.images import router as images_router
 from controllers.login import router as login_router
+from controllers.passenger import router as passenger_router
 from controllers.rating import router as rating_router
+
 from controllers.users import router as users_router
 from controllers.users_map import router as users_map_router
 from controllers.user_subscription_maps import router as user_subscription_maps_router
@@ -21,3 +23,5 @@ app.include_router(
 app.include_router(user_subscription_maps_router, prefix="/user_subscription_maps", tags=["user_subscription_maps"], dependencies=[Depends(authenticated_user)])
 app.include_router(geocoding_router, prefix="/geocode", tags=["geocode"], dependencies=[Depends(authenticated_user)])
 app.include_router(login_router, tags=["users"])
+app.include_router(passenger_router, prefix="/passenger", tags=["passenger"], dependencies=[Depends(authenticated_user)])
+
