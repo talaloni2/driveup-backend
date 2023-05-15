@@ -1,8 +1,11 @@
 import asyncio
+from datetime import datetime
+from http import HTTPStatus
 from uuid import uuid4
 
 from httpx import AsyncClient
 
+from logger import logger
 from model.requests.knapsack import KnapsackItem, KnapsackSolverRequest, AcceptSolutionRequest, RejectSolutionsRequest
 from model.responses.knapsack import SuggestedSolution, AcceptSolutionResponse, RejectSolutionResponse
 from model.suggested_solutions_actions_statuses import AcceptResult, RejectResult
@@ -15,7 +18,11 @@ class KnapsackService:
     async def suggest_solution(self, user_id: str, capacity: int, rides: list[KnapsackItem]) -> SuggestedSolution:
         request = KnapsackSolverRequest(items=rides, volume=capacity, knapsack_id=user_id)
         response = await self._client.post("/knapsack-router/solve", json=request.dict())
-        response.raise_for_status()
+        if response.status_code not in (HTTPStatus.OK, HTTPStatus.NO_CONTENT):
+            logger.error(f"Got unexpected status: {response.status_code} from knapsack backend: {response.content}")
+            response.raise_for_status()
+        elif response.status_code == HTTPStatus.NO_CONTENT:
+            return SuggestedSolution(time=datetime.now(), solutions={})
 
         return SuggestedSolution(**response.json())
 
