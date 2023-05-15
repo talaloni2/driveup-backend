@@ -10,6 +10,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 class AuthenticatedUser(BaseModel):
     email: str
+    token: str
 
 
 async def authenticated_user(
@@ -19,4 +20,4 @@ async def authenticated_user(
     if is_token_valid.code != 200 or is_token_valid.result["is_valid"] is not True:
         raise HTTPException(status_code=401, detail="Unauthorized")
 
-    return AuthenticatedUser(**is_token_valid.result["token"])
+    return AuthenticatedUser(**{**is_token_valid.result["token"], "token": token})

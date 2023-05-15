@@ -4,6 +4,7 @@ from typing import TypeVar, Optional, Coroutine, Any, Type, Union
 from httpx import AsyncClient, Response
 
 from model.base_dto import BaseModel
+from pydantic import BaseModel as pydanticBaseModel
 from model.responses.user import UserHandlerResponse
 from model.user_schemas import RequestUser, UserSchema
 
@@ -18,7 +19,7 @@ class TestClient:
     async def post(
         self,
         url: str,
-        req_body: Optional[BaseModel] = None,
+        req_body: Optional[Union[BaseModel, pydanticBaseModel]] = None,
         resp_model: Optional[Type[T]] = None,
         assert_status: Optional[int] = HTTPStatus.OK,
         *args,
@@ -27,6 +28,19 @@ class TestClient:
         if req_body:
             req_body = req_body.dict()
         return await self._execute(self._client.post(url, json=req_body, *args, **kwargs), resp_model, assert_status)
+
+    async def put(
+        self,
+        url: str,
+        req_body: Optional[Union[BaseModel, pydanticBaseModel]] = None,
+        resp_model: Optional[Type[T]] = None,
+        assert_status: Optional[int] = HTTPStatus.OK,
+        *args,
+        **kwargs,
+    ) -> _RESP:
+        if req_body:
+            req_body = req_body.dict()
+        return await self._execute(self._client.put(url, json=req_body, *args, **kwargs), resp_model, assert_status)
 
     async def get(
         self,
