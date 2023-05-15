@@ -2,69 +2,77 @@ from fastapi import APIRouter, Depends
 
 from component_factory import get_passenger_service, get_knapsack_service
 
-from model.requests.driver import DriverOrderDrive, DriverAcceptDrive, DriverRejectDrive
+from model.requests.driver import DriverRequestDrive, DriverAcceptDrive, DriverRejectDrive
 from model.drive_order import DriveOrder
-from model.responses.driver import DriverSuggestedDrives, DriverAcceptDriveResponse, DriverRejectDriveResponse
+from model.responses.driver import DriverSuggestedDrives #DriverAcceptDriveResponse, DriverRejectDriveResponse
 from service.passenger_service import PassengerService
 from service.knapsack_service import KnapsackService
+from model.requests.knapsack import KnapsackItem
 
 router = APIRouter()
 
-CANDIDATES_AMOUNT = 10
+CANDIDATES_AMOUNT = 2
 
-#TODO add routing /requestDrive
+@router.post("/request-drives")
 async def order_new_drive(
-    knapsack_service: KnapsackService = Depends(get_knapsack_service)
+    order_request: DriverRequestDrive, knapsack_service: KnapsackService = Depends(get_knapsack_service),
+    passenger_service: PassengerService = Depends(get_passenger_service)
 ) -> DriverSuggestedDrives:
     """
-    1) Get 10 drives from DB
-    2) Convert them to list[KnapsackItem]
-    3) send suggest_solution request
-    4) Return suggestion to FE
+    1) Gets 10 drives from DB
+    2) Converts them to list[KnapsackItem]
+    3) Sends suggest_solution request
+    4) Returns suggestion to FE
     """
-    rides = get_top_candidates(current_location=DriverOrderDrive.current_location)
-    suggestions = knapsack_service.suggest_solution(DriverOrderDrive.user_id, 4, rides)
-    # TODO adjust to required response structure - not decided yet
+    rides = await get_top_candidates(current_location=[order_request.current_lat, order_request.current_lon], passenger_service=passenger_service)
+    suggestions = await knapsack_service.suggest_solution(order_request.email, 4, rides) # TODO Tal - debug why suggestions are not returned
+    # TODO adjust to required response structure - Yarden
     return suggestions
 
-#TODO add routing /acceptdrive
+@router.post("/accept-drive")
 async def accept_drive(
-    user_id,
-    order_id,
-    knapsack_service: KnapsackService = Depends(get_knapsack_service)
+    accept_drive_request:DriverAcceptDrive,
+    knapsack_service: KnapsackService = Depends(get_knapsack_service),
+    passenger_service: PassengerService = Depends(get_passenger_service)
 
 ):
     """
-    1) Release frozen orders form DB - #TODO how do I know i'm releasing orders that this driver set to be  freezed? what if its another driver?
-    2) sets selected order to "IN PROGRESS"
-    3) sends accept-solution to knapsack
+    1) Sets selected order to "IN PROGRESS"
+    2) Release frozen orders form DB
+    3) Sends accept-solution to knapsack
     """
-    await release_unchosen_orders(order_id)
-    await set_order_as_in_progress(order_id)
-    resp = knapsack_service.accept_solution(user_id=user_id, order_id=order_id)
+    await passenger_service.set_status_to_drive_order(order_id=accept_drive_request.order_id)
+    await passenger_service.release_unchosen_orders_from_freeze(accept_drive_request.order_id, accept_drive_request.email)
+    resp = knapsack_service.accept_solution(user_id=accept_drive_request.email, solution_id='solution_id')
     if resp != 200: # TODO real statuses
         return 500
 
-#TODO add routing /acceptdrive
+@router.post("/reject-drives")
 async def reject_drive(
-    user_id,
-    order_id,
-    knapsack_service: KnapsackService = Depends(get_knapsack_service)
+    reject_drives_request: DriverRejectDrive,
+    knapsack_service: KnapsackService = Depends(get_knapsack_service),
+    passenger_service: PassengerService = Depends(get_passenger_service)
+
 ):
     """
-    1) release frozen drives
+    1) Releases frozen drives
+    2) Sends request to knapsack service
     """
+    await passenger_service.release_unchosen_orders_from_freeze(reject_drives_request.email)
+    resp = knapsack_service.reject_solutions(user_id=reject_drives_request.email)
+
+
 
 
 async def get_top_candidates(current_location,
-    passenger_service: PassengerService = Depends(get_passenger_service)
+    passenger_service:PassengerService
 
 ) -> list[KnapsackItem]:
-    candidates = list[KnapsackItem]
-    orders = await passenger_service.get_top_order_candidats(candidates_amount=CANDIDATES_AMOUNT,
+    candidates = []
+    orders = await passenger_service.get_top_order_candidates(candidates_amount=CANDIDATES_AMOUNT,
                                                              current_location=current_location) #TODO this should change the state of this order to "FREEZE" in DB
     for order in orders:
-        item = KnapsackItem(id = 1, volume = 1, value = 123) # TODO calculate volume, value, id might be the Order id from DB
+        item = KnapsackItem(id=order.email, volume=1, value=123) # TODO calculate volume, value, id might be the Order id from DB
 
         candidates.append(item)
 
