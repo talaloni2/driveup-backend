@@ -41,18 +41,18 @@ async def add_drive_order(order_request: PassengerDriveOrderRequest, passenger_s
         return _to_drive_order_response(order)
 
 
-@router.post("/get-drive")
+@router.get("/get-drive/{orderId}")
 async def handle_get_drive_request(
-    request: PassengerGetDrive, passenger_service: PassengerService = Depends(get_passenger_service)
+    orderId: int, passenger_service: PassengerService = Depends(get_passenger_service)
 ):
-    drive_order_response = await get_drive_by_order_id(request, passenger_service)
+    drive_order_response = await get_drive_by_order_id(orderId, passenger_service)
     return drive_order_response
 
 
 async def get_drive_by_order_id(
-    request: PassengerGetDrive, passenger_service: PassengerService
+    order_id, passenger_service: PassengerService
 ) -> GetDriveResponse:
 
-    order = await passenger_service.get_by_order_id(request.order_id)
+    order = await passenger_service.get_by_order_id(order_id)
     return _to_get_drive_response(order)
 

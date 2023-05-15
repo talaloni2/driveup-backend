@@ -40,29 +40,8 @@ async def test_post_add_drive_order(test_client: TestClient):
 
 async def test_get_drive(test_client: TestClient):
 
-    # order_new_drive_request = PassengerDriveOrderRequest(
-    #     email=EMAIL,
-    #     passengers_amount=PASSENGER_AMOUNT,
-    #     source_location=ADDRESS1,
-    #     dest_location=ADDRESS2
-    # )
-    # resp = await test_client.post(
-    #     url="/passenger/order-drive",
-    #     req_body=order_new_drive_request,
-    #     resp_model=DriveOrderResponse,
-    # )
-    # order_id = resp.order_id
-
-    # passenger_service: PassengerService = Depends(get_passenger_service)
-    # await passenger_service.set_status_to_drive_order(order_id=order_id, new_status="ACTIVE")
-
-    getDriveRequest = PassengerGetDrive(
-        email=EMAIL,
-        order_id=ORDER_ID
-    )
-    resp = await test_client.post(
-        url="passenger/get-drive",
-        req_body=getDriveRequest,
+    resp = await test_client.get(
+        url="/passenger/get-drive/1",
         resp_model=GetDriveResponse,
     )
     assert hasattr(resp, "drive_id")
