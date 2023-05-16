@@ -33,9 +33,9 @@ async def handle_add_drive_order_request(
 
 
 async def add_drive_order(order_request: PassengerDriveOrderRequest, passenger_service: PassengerService):
-        db_drive_order = DriveOrder(email=order_request.email, passengers_amount=order_request.passengers_amount,
-                                    source_location=[order_request.source_location.lat, order_request.source_location.lon],
-                                    dest_location=[order_request.dest_location.lat, order_request.dest_location.lon])
+        db_drive_order = DriveOrder(email=order_request.parameter.currentUserEmail, passengers_amount=order_request.parameter.numberOfPassengers,
+                                    source_location=[order_request.parameter.startLat, order_request.parameter.startLon],
+                                    dest_location=[order_request.parameter.destinationLat, order_request.parameter.destinationLon])
 
         order = await passenger_service.save(db_drive_order)
         return _to_drive_order_response(order)
