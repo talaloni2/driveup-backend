@@ -5,9 +5,14 @@ from model.requests.knapsack import KnapsackItem
 from model.suggested_solutions_actions_statuses import AcceptResult, RejectResult
 
 
+class KnapsackSolution(BaseModel):
+    algorithm: str
+    items: list[KnapsackItem]
+
+
 class SuggestedSolution(BaseModel):
     time: datetime
-    solutions: dict[str, list[KnapsackItem]]
+    solutions: dict[str, KnapsackSolution]
 
 
 class AcceptSolutionResponse(BaseModel):
