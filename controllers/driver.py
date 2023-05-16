@@ -5,6 +5,8 @@ from component_factory import get_passenger_service, get_knapsack_service
 from model.requests.driver import DriverRequestDrive, DriverAcceptDrive, DriverRejectDrive
 from model.drive_order import DriveOrder
 from model.responses.driver import DriverSuggestedDrives #DriverAcceptDriveResponse, DriverRejectDriveResponse
+from model.responses.knapsack import SuggestedSolution, AcceptSolutionResponse, RejectSolutionResponse
+
 from service.passenger_service import PassengerService
 from service.knapsack_service import KnapsackService
 from model.requests.knapsack import KnapsackItem
@@ -17,7 +19,7 @@ CANDIDATES_AMOUNT = 2
 async def order_new_drive(
     order_request: DriverRequestDrive, knapsack_service: KnapsackService = Depends(get_knapsack_service),
     passenger_service: PassengerService = Depends(get_passenger_service)
-) -> DriverSuggestedDrives:
+) -> SuggestedSolution:
     """
     1) Gets 10 drives from DB
     2) Converts them to list[KnapsackItem]

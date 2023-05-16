@@ -47,7 +47,7 @@ async def test_accept_drive(test_client: TestClient):
         req_body=request_drive_request,
         #resp_model=DriveOrderResponse,
     )
-    assert hasattr(resp, "order_id")
+    assert resp.status_code == 200
 
 
 
