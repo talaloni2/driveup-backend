@@ -4,7 +4,7 @@ import http
 
 from component_factory import get_passenger_service
 
-from model.requests.passenger import PassengerDriveOrderRequest, PassengerGetDrive
+from model.requests.passenger import PassengerDriveOrderRequest
 from model.drive_order import DriveOrder
 from model.responses.passenger import DriveOrderResponse, GetDriveResponse
 from service.passenger_service import PassengerService
