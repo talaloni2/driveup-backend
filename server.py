@@ -9,6 +9,7 @@ from controllers.driver import router as driver_router
 
 from controllers.users import router as users_router
 from controllers.users_map import router as users_map_router
+from controllers.user_subscription_maps import router as user_subscription_maps_router
 from controllers.utils import authenticated_user
 
 app = FastAPI()
@@ -20,6 +21,7 @@ app.include_router(users_router, prefix="/users", tags=["users"])
 app.include_router(
     users_map_router, prefix="/users_map", tags=["users_map"], dependencies=[Depends(authenticated_user)]
 )
+app.include_router(user_subscription_maps_router, prefix="/user_subscription_maps", tags=["user_subscription_maps"], dependencies=[Depends(authenticated_user)])
 app.include_router(geocoding_router, prefix="/geocode", tags=["geocode"], dependencies=[Depends(authenticated_user)])
 app.include_router(login_router, tags=["users"])
 app.include_router(passenger_router, prefix="/passenger", tags=["passenger"], dependencies=[Depends(authenticated_user)])

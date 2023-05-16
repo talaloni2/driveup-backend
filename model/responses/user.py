@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Union
 
 from model.base_dto import BaseModel
 from model.requests.knapsack import KnapsackItem
@@ -7,7 +7,8 @@ from model.suggested_solutions_actions_statuses import AcceptResult, RejectResul
 
 
 class UserHandlerResponse(BaseModel):
-    code: int
-    status: str
-    message: str
-    result: Optional[dict]
+    code: Optional[int]
+    status: Optional[str]
+    message: Optional[str]
+    result: Optional[Union[dict, list]]
+    detail: Optional[str]

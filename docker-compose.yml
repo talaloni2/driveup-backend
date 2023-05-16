@@ -122,6 +122,7 @@ services:
       DB_PORT: 5432
       DB_USER: postgres
       DB_PASS: postgres
+      SECRET_KEY_LOCATION: /app/secret_key
     networks:
       - everything
 
