@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends
 
 import pytest
 
-from model.requests.passenger import PassengerDriveOrderRequest, Address, PassengerGetDrive
+from model.requests.passenger import PassengerDriveOrderRequest, DriveOrderRequestParam
 from model.responses.passenger import DriveOrderResponse, GetDriveResponse
 from test.utils.test_client import TestClient
 from service.passenger_service import PassengerService
@@ -17,18 +17,26 @@ pytestmart = pytest.mark.asyncio
 
 EMAIL = "a@b.com"
 PASSENGER_AMOUNT = 1
-ADDRESS1 = Address(lon=1, lat=1)
-ADDRESS2 = Address(lon=2, lat=2)
+ADDRESS1_lat = 1
+ADDRESS1_lon  =1
+ADDRESS2_lat = 2
+ADDRESS2_lon =2
 ORDER_ID = 1
 
 
 
 async def test_post_add_drive_order(test_client: TestClient):
+    parameter = DriveOrderRequestParam(
+        currentUserEmail = EMAIL,
+        startLat= ADDRESS1_lat,
+        startLon= ADDRESS1_lon,
+        destinationLat= ADDRESS2_lat,
+        destinationLon= ADDRESS2_lon,
+        numberOfPassengers= 1,
+
+    )
     order_new_drive_request = PassengerDriveOrderRequest(
-        email=EMAIL,
-        passengers_amount=PASSENGER_AMOUNT,
-        source_location=ADDRESS1,
-        dest_location=ADDRESS2
+        parameter=parameter
     )
     resp = await test_client.post(
         url="/passenger/order-drive",
