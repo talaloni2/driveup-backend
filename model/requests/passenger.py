@@ -1,19 +1,20 @@
-from model.base_dto import BaseModel
+from pydantic import BaseModel, Field
 
-class Address(BaseModel):
-    lon: int
-    lat: int
-
+# class Address(BaseModel):
+#     lon: int
+#     lat: int
+class DriveOrderRequestParam(BaseModel):
+    currentUserEmail: str
+    startLat: float
+    startLon: float
+    destinationLat: float
+    destinationLon: float
+    numberOfPassengers: int
 class PassengerDriveOrderRequest(BaseModel):
-    email: str
-    passengers_amount: int
-    source_lat: float
-    source_lon: float
-    dest_lat: float
-    dest_lon: float
-    passengers_amount: int
+    parameter: DriveOrderRequestParam = Field(...)
 
 
-class PassengerGetDrive(BaseModel):
-    email: str
-    order_id: int
+
+# class PassengerGetDrive(BaseModel):
+#     email: str
+#     order_id: int
