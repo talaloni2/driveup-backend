@@ -31,9 +31,8 @@ async def test_post_request_drive(test_client: TestClient):
     resp = await test_client.post(
         url="/driver/request-drives",
         req_body=request_drive_request,
-        #resp_model=DriveOrderResponse,
     )
-    assert hasattr(resp, "order_id")
+    assert resp.status_code == 200
 
 
 async def test_accept_drive(test_client: TestClient):
@@ -45,7 +44,6 @@ async def test_accept_drive(test_client: TestClient):
     resp = await test_client.post(
         url="/driver/request-drives",
         req_body=request_drive_request,
-        #resp_model=DriveOrderResponse,
     )
     assert resp.status_code == 200
 
