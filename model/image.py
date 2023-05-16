@@ -8,3 +8,4 @@ class Image(Base):
     id = Column(Integer, primary_key=True)
     image_data = Column(LargeBinary)
     filename = Column(String)
+    related_email = Column(String)

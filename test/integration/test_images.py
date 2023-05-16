@@ -20,7 +20,7 @@ async def test_upload_image(test_client: TestClient, ensure_db_schema: None):
 
     assert resp.id is not None, "Image should have an ID"
     await test_client.delete(
-        url=f"/images/{resp.id}",
+        url=f"/images/",
         resp_model=None,
     )
 
@@ -37,7 +37,7 @@ async def test_delete_image(test_client: TestClient, ensure_db_schema: None):
     assert resp.id is not None, "Failed creating image"
 
     await test_client.delete(
-        url=f"/images/{resp.id}",
+        url=f"/images/",
     )
     await test_client.get(
         url=f"/images/{resp.id}",
@@ -47,7 +47,7 @@ async def test_delete_image(test_client: TestClient, ensure_db_schema: None):
 
 async def test_delete_non_existing_image(test_client: TestClient, ensure_db_schema: None):
     await test_client.delete(
-        url=f"/images/{2 ** 25}",
+        url=f"/images/",
         assert_status=HTTPStatus.NOT_FOUND,
     )
 

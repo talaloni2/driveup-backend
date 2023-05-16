@@ -6,7 +6,7 @@ import pytest
 from httpx import AsyncClient, Response, Request, HTTPStatusError
 
 from model.requests.knapsack import KnapsackItem
-from model.responses.knapsack import SuggestedSolution, AcceptSolutionResponse, RejectSolutionResponse
+from model.responses.knapsack import SuggestedSolution, AcceptSolutionResponse, RejectSolutionResponse, KnapsackSolution
 from model.suggested_solutions_actions_statuses import AcceptResult, RejectResult
 from service.knapsack_service import KnapsackService
 from test.utils.utils import get_random_email, get_random_string
@@ -25,7 +25,7 @@ async def test_suggest_solution():
     client = AsyncMock(AsyncClient)
     service = KnapsackService(client)
     item = KnapsackItem(id=get_random_string(), value=2, volume=1)
-    solutions = {get_random_string(): [item]}
+    solutions = {get_random_string(): KnapsackSolution(algorithm="aaa", items=[item])}
     client.post = AsyncMock(
         return_value=_get_response(SuggestedSolution(time=datetime.now(), solutions=solutions).json())
     )

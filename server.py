@@ -1,5 +1,8 @@
+import asyncio
+
 from fastapi import FastAPI, Depends
 
+from component_factory import get_migration_service
 from controllers.geocoding import router as geocoding_router
 from controllers.images import router as images_router
 from controllers.login import router as login_router
@@ -11,6 +14,11 @@ from controllers.users import router as users_router
 from controllers.users_map import router as users_map_router
 from controllers.user_subscription_maps import router as user_subscription_maps_router
 from controllers.utils import authenticated_user
+from logger import logger
+
+logger.info("Migrating database")
+asyncio.new_event_loop().run_until_complete(get_migration_service().migrate())
+logger.info("Finished migrating database. Starting application")
 
 app = FastAPI()
 

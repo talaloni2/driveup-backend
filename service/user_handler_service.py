@@ -4,7 +4,7 @@ from fastapi import HTTPException
 from httpx import AsyncClient
 
 from model.requests.user import UserHandlerLoginRequest, UserHandlerCreateUserRequest, UserHandlerUpdateUserRequest
-from model.responses.user import UserHandlerResponse
+from model.responses.user import UserHandlerResponse, UserHandlerGetByEmailResponse
 
 
 class UserHandlerService:
@@ -31,11 +31,11 @@ class UserHandlerService:
 
         return UserHandlerResponse(**response.json())
 
-    async def get_user_by_email(self, email: str, token: str) -> UserHandlerResponse:
+    async def get_user_by_email(self, email: str, token: str) -> UserHandlerGetByEmailResponse:
         response = await self._client.get(f"/users/{email}", headers={"Authorization": f"Bearer {token}"})
         response.raise_for_status()
 
-        return UserHandlerResponse(**response.json())
+        return UserHandlerGetByEmailResponse(**response.json())
 
     async def update_user(self, email: str, token: str, full_name: Optional[str], car_model: Optional[str],
                           car_color: Optional[str], plate_number: Optional[str], **kwargs) -> UserHandlerResponse:

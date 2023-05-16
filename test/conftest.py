@@ -1,5 +1,5 @@
 import asyncio
-from typing import Generator
+from typing import Generator, NamedTuple
 from unittest.mock import AsyncMock
 
 import pytest
@@ -9,8 +9,11 @@ from httpx import AsyncClient
 from component_factory import get_config, get_migration_service
 from controllers.utils import AuthenticatedUser, authenticated_user
 from model.configuration import Config
+from model.responses.user import UserHandlerResponse
+from model.user_schemas import RequestUser, UserSchema
 from server import app
 from test.utils.test_client import TestClient
+from test.utils.utils import get_random_string
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -51,10 +54,37 @@ async def test_client(event_loop) -> TestClient:
 
 
 @pytest.fixture
-async def test_client_unauthenticated(test_client):
+async def unauthenticated(test_client):
     if authenticated_user in app.dependency_overrides:
         del app.dependency_overrides[authenticated_user]
     return test_client
+
+
+class TestUser(NamedTuple):
+    email: str
+    token: str
+
+
+@pytest.fixture()
+async def test_user(unauthenticated, test_client) -> TestUser:
+    new_username = f"test_user_{get_random_string()}@g.com"
+    token = (await test_client.post(
+        url="/users/",
+        req_body=RequestUser(parameter=UserSchema(
+            email=new_username,
+            password="1234",
+            phone_number=new_username,
+            full_name=new_username,
+        )),
+        resp_model=UserHandlerResponse
+    )).result["token"]
+    yield TestUser(email=new_username, token=token)
+
+    await test_client.delete(
+        url="/users/delete",
+        headers={"Authorization": f"Bearer {token}"}
+    )
+
 
 
 @pytest.fixture()
