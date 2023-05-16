@@ -8,4 +8,4 @@ class DriveOrderResponse(BaseModel):
 
 
 class GetDriveResponse(BaseModel):
-    drive_id: Optional[int]
+    drive_id: Optional[int] = None
