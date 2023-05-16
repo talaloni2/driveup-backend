@@ -3,7 +3,7 @@ from typing import Optional
 from fastapi import HTTPException
 from httpx import AsyncClient
 
-from model.requests.user import UserHandlerLoginRequest, UserHandlerCreateUserRequest
+from model.requests.user import UserHandlerLoginRequest, UserHandlerCreateUserRequest, UserHandlerUpdateUserRequest
 from model.responses.user import UserHandlerResponse
 
 
@@ -21,6 +21,37 @@ class UserHandlerService:
 
     async def validate_token(self, token: str) -> UserHandlerResponse:
         response = await self._client.get("/users/validate_token", headers={"Authorization": f"Bearer {token}"})
+        response.raise_for_status()
+
+        return UserHandlerResponse(**response.json())
+
+    async def get_users(self, token: str) -> UserHandlerResponse:
+        response = await self._client.get("/users/", headers={"Authorization": f"Bearer {token}"})
+        response.raise_for_status()
+
+        return UserHandlerResponse(**response.json())
+
+    async def get_user_by_email(self, email: str, token: str) -> UserHandlerResponse:
+        response = await self._client.get(f"/users/{email}", headers={"Authorization": f"Bearer {token}"})
+        response.raise_for_status()
+
+        return UserHandlerResponse(**response.json())
+
+    async def update_user(self, email: str, token: str, full_name: Optional[str], car_model: Optional[str],
+                          car_color: Optional[str], plate_number: Optional[str], **kwargs) -> UserHandlerResponse:
+        request = UserHandlerUpdateUserRequest(
+            full_name=full_name,
+            car_model=car_model,
+            car_color=car_color,
+            plate_number=plate_number
+        )
+        response = await self._client.put(f"/users/{email}", json={"parameter": request.dict()}, headers={"Authorization": f"Bearer {token}"})
+        response.raise_for_status()
+
+        return UserHandlerResponse(**response.json())
+
+    async def delete_user(self, email: str, token: str) -> UserHandlerResponse:
+        response = await self._client.delete(f"/users/{email}", headers={"Authorization": f"Bearer {token}"})
         response.raise_for_status()
 
         return UserHandlerResponse(**response.json())

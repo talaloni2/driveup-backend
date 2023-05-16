@@ -7,8 +7,11 @@ class Address(BaseModel):
 class PassengerDriveOrderRequest(BaseModel):
     email: str
     passengers_amount: int
-    source_location: Address
-    dest_location: Address
+    source_lat: float
+    source_lon: float
+    dest_lat: float
+    dest_lon: float
+    passengers_amount: int
 
 
 class PassengerGetDrive(BaseModel):
