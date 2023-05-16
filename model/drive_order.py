@@ -16,4 +16,6 @@ class DriveOrder(Base):
     source_location = Column(ARRAY(Float, dimensions=1))
     dest_location = Column(ARRAY(Float, dimensions=1))
     drive_id = Column(Integer, default=None)
+    frozen_by = Column(String) # driver's email
+
 

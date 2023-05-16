@@ -18,6 +18,7 @@ services:
     restart: always
     ports:
       - '15673:15672'
+      - '5673:5672'
     volumes:
       - ~/.docker-conf/rabbitmq/data/:/var/lib/rabbitmq/
       - ~/.docker-conf/rabbitmq/log/:/var/log/rabbitmq
@@ -34,6 +35,8 @@ services:
   redis:
     image: 'redis'
     restart: always
+    ports:
+      - '6380:6379'
     environment:
       - ALLOW_EMPTY_PASSWORD=yes
     networks:
