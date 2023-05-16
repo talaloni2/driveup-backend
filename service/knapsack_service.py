@@ -7,7 +7,8 @@ from httpx import AsyncClient
 
 from logger import logger
 from model.requests.knapsack import KnapsackItem, KnapsackSolverRequest, AcceptSolutionRequest, RejectSolutionsRequest
-from model.responses.knapsack import SuggestedSolution, AcceptSolutionResponse, RejectSolutionResponse
+from model.responses.knapsack import SuggestedSolution, AcceptSolutionResponse, RejectSolutionResponse, \
+    ItemClaimedResponse
 from model.suggested_solutions_actions_statuses import AcceptResult, RejectResult
 
 
@@ -41,6 +42,13 @@ class KnapsackService:
 
         response = RejectSolutionResponse(**response.json())
         return response.result == RejectResult.REJECT_SUCCESS
+
+    async def is_ride_request_claimed(self, ride_request_id: str) -> bool:
+        response = await self._client.get(f"/knapsack-router/check-claimed/{ride_request_id}")
+        response.raise_for_status()
+
+        response = ItemClaimedResponse(**response.json())
+        return response.is_claimed
 
 
 async def _usage_example():

@@ -6,7 +6,8 @@ import pytest
 from httpx import AsyncClient, Response, Request, HTTPStatusError
 
 from model.requests.knapsack import KnapsackItem
-from model.responses.knapsack import SuggestedSolution, AcceptSolutionResponse, RejectSolutionResponse, KnapsackSolution
+from model.responses.knapsack import SuggestedSolution, AcceptSolutionResponse, RejectSolutionResponse, \
+    KnapsackSolution, ItemClaimedResponse
 from model.suggested_solutions_actions_statuses import AcceptResult, RejectResult
 from service.knapsack_service import KnapsackService
 from test.utils.utils import get_random_email, get_random_string
@@ -99,3 +100,15 @@ async def test_reject_solution_error():
 
     with pytest.raises(HTTPStatusError):
         await service.reject_solutions(get_random_email())
+
+
+@pytest.mark.parametrize("is_claimed", [True, False])
+async def test_is_item_claimed(is_claimed):
+    client = AsyncMock(AsyncClient)
+    service = KnapsackService(client)
+    client.get = AsyncMock(
+        return_value=_get_response(ItemClaimedResponse(is_claimed=is_claimed).json())
+    )
+
+    is_claimed_response = await service.is_ride_request_claimed(get_random_string())
+    assert is_claimed_response == is_claimed

@@ -21,3 +21,7 @@ class AcceptSolutionResponse(BaseModel):
 
 class RejectSolutionResponse(BaseModel):
     result: RejectResult
+
+
+class ItemClaimedResponse(BaseModel):
+    is_claimed: bool
