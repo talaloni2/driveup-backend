@@ -1,3 +1,4 @@
+from http import HTTPStatus
 from typing import Optional
 
 from fastapi import HTTPException
@@ -21,6 +22,8 @@ class UserHandlerService:
 
     async def validate_token(self, token: str) -> UserHandlerResponse:
         response = await self._client.get("/users/validate_token", headers={"Authorization": f"Bearer {token}"})
+        if response.status_code == HTTPStatus.UNAUTHORIZED:
+            raise HTTPException(status_code=HTTPStatus.UNAUTHORIZED, detail="Token invalid or expired")
         response.raise_for_status()
 
         return UserHandlerResponse(**response.json())
