@@ -33,7 +33,9 @@ async def test_post_request_drive(test_client: TestClient):
         req_body=request_drive_request,
     )
     assert resp.status_code == 200
-
+    resp_json = resp.json()
+    assert 'time' in resp_json
+    assert 'solutions' in resp_json
 
 async def test_accept_drive(test_client: TestClient):
     request_drive_request = DriverRequestDrive(
