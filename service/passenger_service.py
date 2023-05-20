@@ -5,10 +5,22 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from model.drive_order import DriveOrder, DRIVE_ORDER_TABLE
 
-SAVE_RATING_QUERY_TEMPLATE = textwrap.dedent(
+GET_CLOSEST_ORDERS_QUERY = textwrap.dedent(
     f"""
-INSERT INTO {DRIVE_ORDER_TABLE} (email, passengers_amount, status, source_location, dest_location)
-VALUES (:email, :passengers_amount, :status, :source_location, :dest_location)
+
+SELECT
+    6371 * 2 * ASIN(SQRT(
+        POWER(SIN((RADIANS(dest_location[1]) - RADIANS(source_location[1])) / 2), 2) +
+        COS(RADIANS(source_location[1])) * COS(RADIANS(dest_location[1])) *
+        POWER(SIN((RADIANS(dest_location[2]) - RADIANS(source_location[2] )) / 2), 2)
+    )) AS distance, id
+FROM
+    drive_orders
+WHERE
+    status ilike '%NEW%'
+ORDER BY distance
+
+LIMIT 10
 """
 )
 
@@ -54,9 +66,10 @@ class PassengerService:
         1) Get x orders
         2) Set them frozen
         """
-        res = await self._session.execute(
-            select(DriveOrder).where(DriveOrder.status == "NEW").limit(candidates_amount))
-        orders = res.scalars().all()
+
+        async with self._session.begin():
+            results = await self._session.execute(text(GET_CLOSEST_ORDERS_QUERY))
+            orders = results.fetchall()
 
         for order in orders:
             await self.set_status_to_drive_order(order_id=order.id, new_status="FROZEN")
