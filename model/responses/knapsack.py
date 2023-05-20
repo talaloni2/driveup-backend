@@ -8,6 +8,7 @@ from model.suggested_solutions_actions_statuses import AcceptResult, RejectResul
 class KnapsackSolution(BaseModel):
     algorithm: str
     items: list[KnapsackItem]
+    total_value: int
 
 
 class SuggestedSolution(BaseModel):
