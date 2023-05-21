@@ -20,7 +20,7 @@ async def upload_image(
     image_service: ImageService = Depends(get_image_service),
     normalizer: ImageNormalizationService = Depends(get_image_normalization_service),
     user: AuthenticatedUser = Depends(authenticated_user),
-):
+) -> CreateImageResponse:
     image_data = normalizer.normalize(await image.read())
     image_instance = Image(image_data=image_data, filename=normalizer.normalize_file_name(image.filename), related_email=user.email)
 
