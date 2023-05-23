@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncEngine, async_sessi
 
 from model.configuration import Config
 from service.db_migration_service import DatabaseMigrationService
+from service.driver_service import DriverService
 from service.geocoding_service import GeocodingService
 from service.image_normalization_service import ImageNormalizationService
 from service.image_service import ImageService
@@ -81,6 +82,10 @@ def get_rating_service(db_session: AsyncSession = Depends(get_db_session)):
 
 def get_passenger_service(db_session: AsyncSession = Depends(get_db_session)):
     return PassengerService(db_session)
+
+
+def get_driver_service(db_session: AsyncSession = Depends(get_db_session)):
+    return DriverService(db_session)
 
 
 def get_user_handler_service(config: Config = Depends(get_config)):

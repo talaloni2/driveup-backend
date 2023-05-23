@@ -5,7 +5,7 @@ import http
 from component_factory import get_passenger_service
 
 from model.requests.passenger import PassengerDriveOrderRequest
-from model.drive_order import DriveOrder
+from model.passenger_drive_order import PassengerDriveOrder
 from model.responses.passenger import DriveOrderResponse, GetDriveResponse
 from service.passenger_service import PassengerService
 from fastapi.responses import JSONResponse
@@ -14,11 +14,11 @@ from fastapi.responses import JSONResponse
 router = APIRouter()
 
 
-def _to_drive_order_response(order: DriveOrder):
+def _to_drive_order_response(order: PassengerDriveOrder):
     return DriveOrderResponse(order_id=order.id)
 
 
-def _to_get_drive_response(order: DriveOrder):
+def _to_get_drive_response(order: PassengerDriveOrder):
     if order:
         return GetDriveResponse(drive_id=order.drive_id)
     return GetDriveResponse(drive_id=None)
@@ -33,9 +33,9 @@ async def handle_add_drive_order_request(
 
 
 async def add_drive_order(order_request: PassengerDriveOrderRequest, passenger_service: PassengerService):
-        db_drive_order = DriveOrder(email=order_request.parameter.currentUserEmail, passengers_amount=order_request.parameter.numberOfPassengers,
-                                    source_location=[order_request.parameter.startLat, order_request.parameter.startLon],
-                                    dest_location=[order_request.parameter.destinationLat, order_request.parameter.destinationLon])
+        db_drive_order = PassengerDriveOrder(email=order_request.parameter.currentUserEmail, passengers_amount=order_request.parameter.numberOfPassengers,
+                                             source_location=[order_request.parameter.startLat, order_request.parameter.startLon],
+                                             dest_location=[order_request.parameter.destinationLat, order_request.parameter.destinationLon])
 
         order = await passenger_service.save(db_drive_order)
         return _to_drive_order_response(order)

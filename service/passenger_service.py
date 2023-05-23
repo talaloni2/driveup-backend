@@ -1,9 +1,10 @@
 import textwrap
+from typing import Optional
 
 from sqlalchemy import text, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from model.drive_order import DriveOrder, DRIVE_ORDER_TABLE, DriveOrderStatus
+from model.passenger_drive_order import PassengerDriveOrder, PASSENGER_DRIVE_ORDER_TABLE, PassengerDriveOrderStatus
 
 GET_CLOSEST_ORDERS_QUERY = textwrap.dedent(
     f"""
@@ -19,7 +20,7 @@ SELECT
         POWER(SIN((RADIANS(dest_location[2]) - RADIANS(source_location[2] )) / 2), 2)
     )) AS distance, id, passengers_amount
 FROM
-    drive_orders
+    passenger_drive_orders
 WHERE
     status ilike '%NEW%'
 ORDER BY distance_from_driver
@@ -33,7 +34,7 @@ class PassengerService:
     def __init__(self, session: AsyncSession):
         self._session = session
 
-    async def save(self, order: DriveOrder) -> DriveOrder:
+    async def save(self, order: PassengerDriveOrder) -> PassengerDriveOrder:
 
         async with self._session.begin():
             self._session.add(order)
@@ -42,35 +43,37 @@ class PassengerService:
 
         return order
 
-    async def get_by_user_email(self, email: str) -> DriveOrder:
+    async def get_by_user_email(self, email: str) -> PassengerDriveOrder:
         async with self._session.begin():
-            res = await self._session.execute(select(DriveOrder).where(DriveOrder.email == email).limit(1))
+            res = await self._session.execute(select(PassengerDriveOrder).where(PassengerDriveOrder.email == email).limit(1))
         return res.scalar_one_or_none()
 
-    async def get_by_order_id(self, order_id: int) -> DriveOrder:
+    async def get_by_order_id(self, order_id: int) -> PassengerDriveOrder:
         async with self._session.begin():
-            res = await self._session.execute(select(DriveOrder).where(DriveOrder.id == order_id).limit(1))
+            res = await self._session.execute(select(PassengerDriveOrder).where(PassengerDriveOrder.id == order_id).limit(1))
         return res.scalar_one_or_none()
 
-    async def get_active_by_order_id(self, order_id: int) -> DriveOrder:
+    async def get_active_by_order_id(self, order_id: int) -> PassengerDriveOrder:
         async with self._session.begin():
-            res = await self._session.execute(select(DriveOrder).where(DriveOrder.id == order_id, DriveOrder.status == DriveOrderStatus.ACTIVE).limit(1))
+            res = await self._session.execute(select(PassengerDriveOrder).where(PassengerDriveOrder.id == order_id, PassengerDriveOrder.status == PassengerDriveOrderStatus.ACTIVE).limit(1))
         return res.scalar_one_or_none()
 
-    async def set_status_to_drive_order(self, order_id: int, new_status: str) -> DriveOrder:
+    async def set_status_to_drive_order(self, order_id: int, new_status: str):
         #async with self._session.begin():
-        await self._session.execute(update(DriveOrder).where((DriveOrder.id == order_id)).values(status=new_status))
+        async with self._session.begin():
+            await self._session.execute(update(PassengerDriveOrder).where((PassengerDriveOrder.id == order_id)).values(status=new_status))
 
-    async def set_frozen_by(self, order_id: int, freezer_email: str = None) -> DriveOrder:
+    async def set_frozen_by(self, order_id: int, freezer_email: str = None):
         #async with self._session.begin():
         if freezer_email:
-            await self._session.execute(update(DriveOrder).where((DriveOrder.id == order_id)).values(frozen_by=freezer_email))
+            async with self._session.begin():
+                await self._session.execute(update(PassengerDriveOrder).where((PassengerDriveOrder.id == order_id)).values(frozen_by=freezer_email))
 
-    async def delete(self, drive: DriveOrder) -> None:
+    async def delete(self, drive: PassengerDriveOrder) -> None:
         async with self._session.begin():
             await self._session.delete(drive)
 
-    async def get_top_order_candidates(self, candidates_amount, current_location):
+    async def get_top_order_candidates(self, candidates_amount, current_location: list[float], driver_id: str):
         """
         1) Get x orders
         2) Set them frozen
@@ -82,17 +85,25 @@ class PassengerService:
 
         for order in orders:
             await self.set_status_to_drive_order(order_id=order.id, new_status="FROZEN")
+            await self.set_frozen_by(order_id=order.id, freezer_email=driver_id)
 
         return orders
 
-    async def release_unchosen_orders_from_freeze(self, email, chosen_order_id=None):
-        if chosen_order_id:
-            await self._session.execute(update(DriveOrder).where((DriveOrder.status == "FROZEN", DriveOrder.frozen_by == email,
-                                         DriveOrder.id != chosen_order_id)).values(status="NEW"))
+    async def release_order_from_freeze(self, email, order_id: int):
+        async with self._session.begin():
+            await self._session.execute(update(PassengerDriveOrder).where(PassengerDriveOrder.status == "FROZEN", PassengerDriveOrder.frozen_by == email,
+                                                                           PassengerDriveOrder.id == order_id).values(status="NEW", frozen_by=None))
+
+    async def release_unchosen_orders_from_freeze(self, email, chosen_order_ids: Optional[list[int]]=None):
+        if chosen_order_ids:
+            async with self._session.begin():
+                await self._session.execute(update(PassengerDriveOrder).where((PassengerDriveOrder.status == "FROZEN", PassengerDriveOrder.frozen_by == email,
+                                                                               PassengerDriveOrder.id.notin_(chosen_order_ids))).values(status="NEW", frozen_by=None))
             return
 
-        await self._session.execute(
-            update(DriveOrder).where((DriveOrder.status == "FROZEN", DriveOrder.frozen_by == email)).values(status="NEW"))
+        async with self._session.begin():
+            await self._session.execute(
+                update(PassengerDriveOrder).where(PassengerDriveOrder.status == "FROZEN", PassengerDriveOrder.frozen_by == email).values(status="NEW", frozen_by=None))
 
 
 

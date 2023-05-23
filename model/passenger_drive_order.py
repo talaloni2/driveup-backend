@@ -4,21 +4,22 @@ from enum import Enum
 
 from model.base_db import Base
 
-DRIVE_ORDER_TABLE = "drive_orders"
+PASSENGER_DRIVE_ORDER_TABLE = "passenger_drive_orders"
 
 
-class DriveOrderStatus(str, Enum):
+class PassengerDriveOrderStatus(str, Enum):
     NEW = "NEW"
     ACTIVE = "ACTIVE"
+    FROZEN = "FROZEN"
     FINISHED = "FINISHED"
 
 
-class DriveOrder(Base):
-    __tablename__ = DRIVE_ORDER_TABLE
+class PassengerDriveOrder(Base):
+    __tablename__ = PASSENGER_DRIVE_ORDER_TABLE
     id = Column(Integer, primary_key=True, autoincrement=True)
     email = Column(String)
     passengers_amount = Column(Integer)
-    status = Column(String, default='NEW')  # TODO convert to ENUM
+    status = Column(String, default=PassengerDriveOrderStatus.NEW)
     source_location = Column(ARRAY(Float, dimensions=1))
     dest_location = Column(ARRAY(Float, dimensions=1))
     drive_id = Column(Integer, default=None)

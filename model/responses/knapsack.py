@@ -15,6 +15,7 @@ class KnapsackSolution(BaseModel):
 
 class SuggestedSolution(BaseModel):
     time: datetime
+    expires_at: datetime
     solutions: dict[str, KnapsackSolution]
 
 

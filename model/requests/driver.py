@@ -23,7 +23,7 @@ class DriverRequestDrive(BaseModel):
 
 class DriverAcceptDrive(BaseModel):
     email: str
-    order_id: int
+    order_id: str
 
 
 class DriverRejectDrive(BaseModel):
