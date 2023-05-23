@@ -3,7 +3,7 @@ import textwrap
 from sqlalchemy import text, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from model.drive_order import DriveOrder, DRIVE_ORDER_TABLE
+from model.drive_order import DriveOrder, DRIVE_ORDER_TABLE, DriveOrderStatus
 
 GET_CLOSEST_ORDERS_QUERY = textwrap.dedent(
     f"""
@@ -50,7 +50,7 @@ class PassengerService:
 
     async def get_active_by_order_id(self, order_id: int) -> DriveOrder:
         async with self._session.begin():
-            res = await self._session.execute(select(DriveOrder).where(DriveOrder.id == order_id, DriveOrder.status == "ACTIVE").limit(1))
+            res = await self._session.execute(select(DriveOrder).where(DriveOrder.id == order_id, DriveOrder.status == DriveOrderStatus.ACTIVE).limit(1))
         return res.scalar_one_or_none()
 
     async def set_status_to_drive_order(self, order_id: int, new_status: str) -> DriveOrder:

@@ -15,7 +15,6 @@ class LimitValues(BaseModel):
 
 
 class DriverRequestDrive(BaseModel):
-    email: str
     current_lat: float
     current_lon: float
     limits: dict[Limit, LimitValues] = {}
