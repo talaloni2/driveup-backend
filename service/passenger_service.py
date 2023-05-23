@@ -10,15 +10,19 @@ GET_CLOSEST_ORDERS_QUERY = textwrap.dedent(
 
 SELECT
     6371 * 2 * ASIN(SQRT(
+        POWER(SIN((RADIANS(:current_location[1]) - RADIANS(source_location[1])) / 2), 2) +
+        COS(RADIANS(source_location[1])) * COS(RADIANS(:current_location[1])) *
+        POWER(SIN((RADIANS(:current_location[2]) - RADIANS(source_location[2] )) / 2), 2)
+    )) AS distance_from_driver, 6371 * 2 * ASIN(SQRT(
         POWER(SIN((RADIANS(dest_location[1]) - RADIANS(source_location[1])) / 2), 2) +
         COS(RADIANS(source_location[1])) * COS(RADIANS(dest_location[1])) *
         POWER(SIN((RADIANS(dest_location[2]) - RADIANS(source_location[2] )) / 2), 2)
-    )) AS distance, id
+    )) AS distance, id, passengers_amount
 FROM
     drive_orders
 WHERE
     status ilike '%NEW%'
-ORDER BY distance
+ORDER BY distance_from_driver
 
 LIMIT 10
 """
@@ -61,14 +65,14 @@ class PassengerService:
         async with self._session.begin():
             await self._session.delete(drive)
 
-    async def get_top_order_candidates(self, candidates_amount, current_location ):
+    async def get_top_order_candidates(self, candidates_amount, current_location):
         """
         1) Get x orders
         2) Set them frozen
         """
 
         async with self._session.begin():
-            results = await self._session.execute(text(GET_CLOSEST_ORDERS_QUERY))
+            results = await self._session.execute(text(GET_CLOSEST_ORDERS_QUERY, current_location=current_location))
             orders = results.fetchall()
 
         for order in orders:

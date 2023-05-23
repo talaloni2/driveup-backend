@@ -1,8 +1,11 @@
+from typing import Any
+
 from fastapi import APIRouter, Depends
 
 from component_factory import get_passenger_service, get_knapsack_service
+from mappings.factory_mapping import LIMITS_MAPPING
 
-from model.requests.driver import DriverRequestDrive, DriverAcceptDrive, DriverRejectDrive
+from model.requests.driver import DriverRequestDrive, DriverAcceptDrive, DriverRejectDrive, Limit, LimitValues
 from model.drive_order import DriveOrder
 from model.responses.driver import DriverSuggestedDrives  # DriverAcceptDriveResponse, DriverRejectDriveResponse
 from model.responses.knapsack import SuggestedSolution, AcceptSolutionResponse, RejectSolutionResponse
@@ -28,8 +31,7 @@ async def order_new_drive(
     4) Returns suggestion to FE
     """
     rides = await get_top_candidates(current_location=[order_request.current_lat, order_request.current_lon],
-                                     passenger_service=passenger_service)
-    # TODO Add limitations logic - Aviv
+                                     passenger_service=passenger_service, limits=order_request.limits)
     await knapsack_service.reject_solutions(order_request.email)
     suggestions = await knapsack_service.suggest_solution(order_request.email, 4,
                                                           rides)  # TODO Tal - debug why suggestions are not returned
@@ -78,16 +80,28 @@ def get_suggestions_with_total_value(suggestions: SuggestedSolution) -> Suggeste
     return suggestions
 
 
-async def get_top_candidates(current_location,
-                             passenger_service: PassengerService
+def is_order_acceptable(order: Any, limits: dict[Limit, LimitValues]) -> bool:
+    for limit, limit_values in limits.items():
+        limit_function = LIMITS_MAPPING[limit.value]
+        if not limit_function(order, limit_values):
+            return False
+    return True
 
+
+async def get_top_candidates(current_location,
+                             passenger_service: PassengerService,
+                             limits: dict[Limit, LimitValues]
                              ) -> list[KnapsackItem]:
     candidates = []
-    orders = await passenger_service.get_top_order_candidates(candidates_amount=CANDIDATES_AMOUNT,
-                                                              current_location=current_location)  # TODO this should change the state of this order to "FREEZE" in DB
+    orders = await passenger_service.get_top_order_candidates(
+        candidates_amount=CANDIDATES_AMOUNT,
+        current_location=current_location
+    )  # TODO this should change the state of this order to "FREEZE" in DB
     for order in orders:
-        item = KnapsackItem(id=order.id, volume=1,
-                            value=123)  # TODO calculate volume, value, id might be the Order id from DB
+        if not is_order_acceptable(order=order, limits=limits):
+            continue
+        item = KnapsackItem(id=order.id, volume=order.passengers_amount,
+                            value=order.distance_from_driver)  # TODO calculate volume, value, id might be the Order id from DB
 
         candidates.append(item)
 

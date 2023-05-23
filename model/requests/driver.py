@@ -1,17 +1,18 @@
-from typing import Optional
+from functools import partial
+from typing import Optional, Any
 
 from model.base_dto import BaseModel
 from enum import Enum
 
 
-class Limit(Enum):
-    pick_up_distance = "pick_up_distance"
-    ride_distance = "ride_distance"
-
-
 class LimitValues(BaseModel):
     min: Optional[int] = None
     max: Optional[int] = None
+
+
+class Limit(Enum):
+    pick_up_distance = "pick_up_distance"
+    ride_distance = "ride_distance"
 
 
 class DriverRequestDrive(BaseModel):
