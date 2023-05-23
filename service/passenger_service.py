@@ -10,9 +10,9 @@ GET_CLOSEST_ORDERS_QUERY = textwrap.dedent(
 
 SELECT
     6371 * 2 * ASIN(SQRT(
-        POWER(SIN((RADIANS(:current_location[1]) - RADIANS(source_location[1])) / 2), 2) +
-        COS(RADIANS(source_location[1])) * COS(RADIANS(:current_location[1])) *
-        POWER(SIN((RADIANS(:current_location[2]) - RADIANS(source_location[2] )) / 2), 2)
+        POWER(SIN((RADIANS(:latitude) - RADIANS(source_location[1])) / 2), 2) +
+        COS(RADIANS(source_location[1])) * COS(RADIANS(:latitude)) *
+        POWER(SIN((RADIANS(:longitude) - RADIANS(source_location[2] )) / 2), 2)
     )) AS distance_from_driver, 6371 * 2 * ASIN(SQRT(
         POWER(SIN((RADIANS(dest_location[1]) - RADIANS(source_location[1])) / 2), 2) +
         COS(RADIANS(source_location[1])) * COS(RADIANS(dest_location[1])) *
@@ -77,7 +77,7 @@ class PassengerService:
         """
 
         async with self._session.begin():
-            results = await self._session.execute(text(GET_CLOSEST_ORDERS_QUERY, current_location=current_location))
+            results = await self._session.execute(text(GET_CLOSEST_ORDERS_QUERY), dict(latitude=current_location[0], longitude=current_location[1]))
             orders = results.fetchall()
 
         for order in orders:
