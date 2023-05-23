@@ -45,6 +45,11 @@ class PassengerService:
 
     async def get_by_order_id(self, order_id: int) -> DriveOrder:
         async with self._session.begin():
+            res = await self._session.execute(select(DriveOrder).where(DriveOrder.id == order_id).limit(1))
+        return res.scalar_one_or_none()
+
+    async def get_active_by_order_id(self, order_id: int) -> DriveOrder:
+        async with self._session.begin():
             res = await self._session.execute(select(DriveOrder).where(DriveOrder.id == order_id, DriveOrder.status == "ACTIVE").limit(1))
         return res.scalar_one_or_none()
 

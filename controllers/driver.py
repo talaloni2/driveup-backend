@@ -1,10 +1,14 @@
+from datetime import datetime
+
 from fastapi import APIRouter, Depends
 
 from component_factory import get_passenger_service, get_knapsack_service
+from controllers.utils import AuthenticatedUser, authenticated_user
 
 from model.requests.driver import DriverRequestDrive, DriverAcceptDrive, DriverRejectDrive
 from model.drive_order import DriveOrder
-from model.responses.driver import DriverSuggestedDrives  # DriverAcceptDriveResponse, DriverRejectDriveResponse
+from model.responses.driver import DriverSuggestedDrives, \
+    DriveDetails, OrderLocation, Geocode  # DriverAcceptDriveResponse, DriverRejectDriveResponse
 from model.responses.knapsack import SuggestedSolution, AcceptSolutionResponse, RejectSolutionResponse
 
 from service.passenger_service import PassengerService
@@ -42,7 +46,6 @@ async def accept_drive(
         accept_drive_request: DriverAcceptDrive,
         knapsack_service: KnapsackService = Depends(get_knapsack_service),
         passenger_service: PassengerService = Depends(get_passenger_service)
-
 ):
     """
     1) Sets selected order to "IN PROGRESS"
@@ -70,6 +73,56 @@ async def reject_drive(
     """
     await passenger_service.release_unchosen_orders_from_freeze(reject_drives_request.email)
     resp = knapsack_service.reject_solutions(user_id=reject_drives_request.email)
+
+
+@router.post("/drive-details")
+async def order_details(
+    drive_id: str,
+    user: AuthenticatedUser = Depends(authenticated_user),
+    passenger_service: PassengerService = Depends(get_passenger_service),
+) -> DriveDetails:
+    return DriveDetails(
+        time=datetime.now(),
+        id=drive_id,
+        order_locations=[
+            OrderLocation(
+                user_email=user.email,
+                is_driver=True,
+                is_start_address=True,
+                address=Geocode(latitude=32.0762148, longitude=34.7731433),
+                price=10,
+            ),
+            OrderLocation(
+                user_email="mockPassenger@gmail.com",
+                is_driver=False,
+                is_start_address=True,
+                address=Geocode(latitude=32.0762148, longitude=34.7731433),
+                price=10,
+            ),
+            OrderLocation(
+                user_email="222mockPassenger2@gmail.com",
+                is_driver=False,
+                is_start_address=True,
+                address=Geocode(latitude=32.0762148, longitude=34.7731433),
+                price=10,
+            ),
+            OrderLocation(
+                user_email="mockPassenger@gmail.com",
+                is_driver=False,
+                is_start_address=False,
+                address=Geocode(latitude=32.0762148, longitude=34.7731433),
+                price=10,
+            ),
+            OrderLocation(
+                user_email="222mockPassenger2@gmail.com",
+                is_driver=False,
+                is_start_address=False,
+                address=Geocode(latitude=32.0762148, longitude=34.7731433),
+                price=10,
+            ),
+        ],
+        total_price=20
+    )
 
 
 def get_suggestions_with_total_value(suggestions: SuggestedSolution) -> SuggestedSolution:
