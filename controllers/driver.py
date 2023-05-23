@@ -162,7 +162,7 @@ async def get_top_candidates(current_location,
         if not is_order_acceptable(order=order, limits=limits):
             continue
         item = KnapsackItem(id=order.id, volume=order.passengers_amount,
-                            value=order.distance_from_driver)  # TODO calculate volume, value, id might be the Order id from DB
+                            value=(-1 * order.distance_from_driver))  # TODO calculate volume, value, id might be the Order id from DB
 
         candidates.append(item)
 
