@@ -10,6 +10,7 @@ class KnapsackSolution(BaseModel):
     algorithm: str
     items: list[KnapsackItem]
     total_value: Optional[int]
+    total_volume: Optional[int]
 
 
 class SuggestedSolution(BaseModel):
