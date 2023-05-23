@@ -36,7 +36,7 @@ async def order_new_drive(
     await knapsack_service.reject_solutions(user.email)
     suggestions = await knapsack_service.suggest_solution(user.email, 4, rides)
     # TODO adjust to required response structure - Yarden
-    return get_suggestions_with_total_value(suggestions)
+    return get_suggestions_with_total_value_volume(suggestions)
 
 
 @router.post("/accept-drive")
@@ -124,9 +124,10 @@ async def order_details(
     )
 
 
-def get_suggestions_with_total_value(suggestions: SuggestedSolution) -> SuggestedSolution:
+def get_suggestions_with_total_value_volume(suggestions: SuggestedSolution) -> SuggestedSolution:
     for i, suggestion in suggestions.solutions.items():
         suggestions.solutions[i].total_value = sum(map(lambda x: x.value, suggestion.items))
+        suggestions.solutions[i].total_volume = sum(map(lambda x: x.volume, suggestion.items))
     return suggestions
 
 
