@@ -7,6 +7,12 @@ from model.base_db import Base
 DRIVE_ORDER_TABLE = "drive_orders"
 
 
+class DriveOrderStatus(str, Enum):
+    NEW = "NEW"
+    ACTIVE = "ACTIVE"
+    FINISHED = "FINISHED"
+
+
 class DriveOrder(Base):
     __tablename__ = DRIVE_ORDER_TABLE
     id = Column(Integer, primary_key=True, autoincrement=True)
