@@ -53,6 +53,6 @@ async def get_drive_by_order_id(
     order_id, passenger_service: PassengerService
 ) -> GetDriveResponse:
 
-    order = await passenger_service.get_by_order_id(order_id)
+    order = await passenger_service.get_active_by_order_id(order_id)
     return _to_get_drive_response(order)
 
