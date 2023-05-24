@@ -1,4 +1,5 @@
 import asyncio
+from typing import Generator
 
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -9,19 +10,16 @@ from model.user_rating import UserRating
 from service.rating_service import RatingService
 from test.utils.utils import get_random_email
 
-pytestmark = pytest.mark.asyncio
-
 
 @pytest.fixture
 async def rating_service(event_loop) -> RatingService:
     async with get_db_session_maker(create_db_engine(get_database_url(get_config())))() as session:
         async with session.begin():
-            print(f"event loop: {id(asyncio.get_event_loop())}")
             yield get_rating_service(session)
 
 
+# @pytest.mark.asyncio
 async def test_get_rating(rating_service: RatingService, ensure_db_schema: None, event_loop):
-    print(f"event loop: {id(asyncio.get_event_loop())}")
     email = get_random_email()
     rating = UserRating(email=email, rating=2, raters_count=1)
     await rating_service.save(rating)
