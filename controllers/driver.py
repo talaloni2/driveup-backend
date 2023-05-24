@@ -61,18 +61,18 @@ async def accept_drive(
     3) Sends accept-solution to knapsack
     """
     # TODO: along with setting status to active, we need to assign drive id
+    now = datetime.utcnow()
     suggestion = await driver_service.get_suggestion(user.email, accept_drive_request.order_id)
-    if not suggestion or suggestion.expires_at < datetime.now():
+    if not suggestion or suggestion.expires_at < now:
         raise HTTPException(status_code=HTTPStatus.NOT_ACCEPTABLE, detail={"message": "Suggestion not exists or expired"})
 
-    order_ids = [order["id"] for order in suggestion.passenger_orders]
+    order_ids = [int(order["id"]) for order in suggestion.passenger_orders]
     for order_id in order_ids:
         await passenger_service.set_status_to_drive_order(order_id=order_id, new_status=PassengerDriveOrderStatus.ACTIVE)
 
     await passenger_service.release_unchosen_orders_from_freeze(accept_drive_request.email, order_ids)
-    resp = knapsack_service.accept_solution(user_id=accept_drive_request.email, solution_id='solution_id')
-    if resp != 200:  # TODO real statuses
-        return 500
+    accept_success = await knapsack_service.accept_solution(user_id=accept_drive_request.email, solution_id=accept_drive_request.order_id)
+    return {"acceptSuccess": accept_success}
 
 
 @router.post("/reject-drives")
@@ -87,7 +87,8 @@ async def reject_drive(
     2) Sends request to knapsack service
     """
     await passenger_service.release_unchosen_orders_from_freeze(reject_drives_request.email)
-    resp = knapsack_service.reject_solutions(user_id=reject_drives_request.email)
+    resp = await knapsack_service.reject_solutions(user_id=reject_drives_request.email)
+    return {"rejectSuccess": resp}
 
 
 @router.get("/drive-details/{drive_id}")
