@@ -50,6 +50,8 @@ def create_db_engine(db_url: str = Depends(get_database_url)) -> AsyncEngine:
         poolclass=NullPool,
     )
 
+    # return eng.execution_options(isolation_level="AUTOCOMMIT")
+
 
 @lru_cache()
 def get_db_session_maker(engine: AsyncEngine = Depends(create_db_engine)) -> async_sessionmaker[AsyncSession]:
@@ -59,8 +61,9 @@ def get_db_session_maker(engine: AsyncEngine = Depends(create_db_engine)) -> asy
 async def get_db_session(
     session_maker: async_sessionmaker[AsyncSession] = Depends(get_db_session_maker),
 ) -> AsyncSession:
-    async with session_maker() as session:
-        yield session
+    async with session_maker(autoflush=True) as session:
+        async with session.begin():
+            yield session
 
 
 def get_image_service(db_session: AsyncSession = Depends(get_db_session)):

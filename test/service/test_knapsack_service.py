@@ -28,7 +28,7 @@ async def test_suggest_solution():
     item = KnapsackItem(id=get_random_string(), value=2, volume=1)
     solutions = {get_random_string(): KnapsackSolution(algorithm="aaa", items=[item])}
     client.post = AsyncMock(
-        return_value=_get_response(SuggestedSolution(time=datetime.now(), solutions=solutions).json())
+        return_value=_get_response(SuggestedSolution(time=datetime.now(), solutions=solutions, expires_at=datetime.now()).json())
     )
 
     result = await service.suggest_solution(get_random_email(), 1, [item])

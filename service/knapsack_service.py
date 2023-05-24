@@ -23,7 +23,7 @@ class KnapsackService:
             logger.error(f"Got unexpected status: {response.status_code} from knapsack backend: {response.content}")
             response.raise_for_status()
         elif response.status_code == HTTPStatus.NO_CONTENT:
-            return SuggestedSolution(time=datetime.now(), solutions={})
+            return SuggestedSolution(time=datetime.now(), solutions={}, expires_at=datetime.now())
 
         return SuggestedSolution(**response.json())
 

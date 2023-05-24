@@ -24,16 +24,16 @@ class RatingService:
 
     async def save(self, rating: UserRating) -> UserRating:
         params = {"email": rating.email, "rating": rating.rating}
-        async with self._session.begin():
-            await self._session.execute(text(SAVE_RATING_QUERY_TEMPLATE), params=params)
+        # async with self._session.begin():
+        await self._session.execute(text(SAVE_RATING_QUERY_TEMPLATE), params=params)
 
         return await self.get_by_email(rating.email)
 
     async def get_by_email(self, email: str) -> UserRating:
-        async with self._session.begin():
-            res = await self._session.execute(select(UserRating).where(UserRating.email == email).limit(1))
+        # async with self._session.begin():
+        res = await self._session.execute(select(UserRating).where(UserRating.email == email).limit(1))
         return res.scalar_one_or_none()
 
     async def delete(self, rating: UserRating) -> None:
-        async with self._session.begin():
-            await self._session.delete(rating)
+        # async with self._session.begin():
+        await self._session.delete(rating)
