@@ -127,5 +127,7 @@ def get_cost_estimation_config() -> CostEstimationConfig:
     return CostEstimationConfig()
 
 
-def get_cost_estimation_service(config: CostEstimationConfig = Depends(get_cost_estimation_config)) -> CostEstimationService:
+def get_cost_estimation_service(
+    config: CostEstimationConfig = Depends(get_cost_estimation_config),
+) -> CostEstimationService:
     return CostEstimationService(config)

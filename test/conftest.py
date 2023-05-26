@@ -85,23 +85,23 @@ class TestUser(NamedTuple):
 @pytest.fixture()
 async def test_user(unauthenticated, test_client) -> TestUser:
     new_username = f"test_user_{get_random_string()}@g.com"
-    token = (await test_client.post(
-        url="/users/",
-        req_body=RequestUser(parameter=UserSchema(
-            email=new_username,
-            password="1234",
-            phone_number=new_username,
-            full_name=new_username,
-        )),
-        resp_model=UserHandlerResponse
-    )).result["token"]
+    token = (
+        await test_client.post(
+            url="/users/",
+            req_body=RequestUser(
+                parameter=UserSchema(
+                    email=new_username,
+                    password="1234",
+                    phone_number=new_username,
+                    full_name=new_username,
+                )
+            ),
+            resp_model=UserHandlerResponse,
+        )
+    ).result["token"]
     yield TestUser(email=new_username, token=token)
 
-    await test_client.delete(
-        url="/users/delete",
-        headers={"Authorization": f"Bearer {token}"}
-    )
-
+    await test_client.delete(url="/users/delete", headers={"Authorization": f"Bearer {token}"})
 
 
 @pytest.fixture()

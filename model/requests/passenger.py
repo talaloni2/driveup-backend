@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
 
+
 # class Address(BaseModel):
 #     lon: int
 #     lat: int
@@ -10,9 +11,10 @@ class DriveOrderRequestParam(BaseModel):
     destinationLat: float
     destinationLon: float
     numberOfPassengers: int
+
+
 class PassengerDriveOrderRequest(BaseModel):
     parameter: DriveOrderRequestParam = Field(...)
-
 
 
 # class PassengerGetDrive(BaseModel):

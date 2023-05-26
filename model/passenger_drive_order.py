@@ -25,5 +25,3 @@ class PassengerDriveOrder(Base):
     drive_id = Column(Integer, default=None)
     frozen_by = Column(String)  # driver's email
     estimated_cost = Column(Float)
-
-

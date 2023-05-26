@@ -14,4 +14,3 @@ class GetDriveResponse(BaseModel):
     origin: Geocode
     destination: Geocode
     estimated_cost: float = 0
-

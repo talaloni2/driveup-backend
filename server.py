@@ -29,10 +29,15 @@ app.include_router(users_router, prefix="/users", tags=["users"])
 app.include_router(
     users_map_router, prefix="/users_map", tags=["users_map"], dependencies=[Depends(authenticated_user)]
 )
-app.include_router(user_subscription_maps_router, prefix="/user_subscription_maps", tags=["user_subscription_maps"], dependencies=[Depends(authenticated_user)])
+app.include_router(
+    user_subscription_maps_router,
+    prefix="/user_subscription_maps",
+    tags=["user_subscription_maps"],
+    dependencies=[Depends(authenticated_user)],
+)
 app.include_router(geocoding_router, prefix="/geocode", tags=["geocode"], dependencies=[Depends(authenticated_user)])
 app.include_router(login_router, tags=["users"])
-app.include_router(passenger_router, prefix="/passenger", tags=["passenger"], dependencies=[Depends(authenticated_user)])
+app.include_router(
+    passenger_router, prefix="/passenger", tags=["passenger"], dependencies=[Depends(authenticated_user)]
+)
 app.include_router(driver_router, prefix="/driver", tags=["driver"], dependencies=[Depends(authenticated_user)])
-
-

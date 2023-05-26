@@ -24,10 +24,11 @@ CANDIDATES_AMOUNT = 2
 
 @router.post("/request-drives")
 async def order_new_drive(
-        order_request: DriverRequestDrive, knapsack_service: KnapsackService = Depends(get_knapsack_service),
-        user: AuthenticatedUser = Depends(authenticated_user),
-        passenger_service: PassengerService = Depends(get_passenger_service),
-        driver_service: DriverService = Depends(get_driver_service),
+    order_request: DriverRequestDrive,
+    knapsack_service: KnapsackService = Depends(get_knapsack_service),
+    user: AuthenticatedUser = Depends(authenticated_user),
+    passenger_service: PassengerService = Depends(get_passenger_service),
+    driver_service: DriverService = Depends(get_driver_service),
 ) -> SuggestedSolution:
     """
     1) Gets 10 drives from DB
@@ -35,8 +36,12 @@ async def order_new_drive(
     3) Sends suggest_solution request
     4) Returns suggestion to FE
     """
-    rides = await get_top_candidates(current_location=[order_request.current_lat, order_request.current_lon],
-                                     passenger_service=passenger_service, limits=order_request.limits, driver_id=user.email)
+    rides = await get_top_candidates(
+        current_location=[order_request.current_lat, order_request.current_lon],
+        passenger_service=passenger_service,
+        limits=order_request.limits,
+        driver_id=user.email,
+    )
     await driver_service.reject_solutions(user.email)
     await knapsack_service.reject_solutions(user.email)
     suggestions = await knapsack_service.suggest_solution(user.email, 4, rides)
@@ -48,12 +53,12 @@ async def order_new_drive(
 
 @router.post("/accept-drive")
 async def accept_drive(
-        accept_drive_request: DriverAcceptDrive,
-        knapsack_service: KnapsackService = Depends(get_knapsack_service),
-        passenger_service: PassengerService = Depends(get_passenger_service),
-        driver_service: DriverService = Depends(get_driver_service),
-        user: AuthenticatedUser = Depends(authenticated_user),
-        time_service: TimeService = Depends(get_time_service),
+    accept_drive_request: DriverAcceptDrive,
+    knapsack_service: KnapsackService = Depends(get_knapsack_service),
+    passenger_service: PassengerService = Depends(get_passenger_service),
+    driver_service: DriverService = Depends(get_driver_service),
+    user: AuthenticatedUser = Depends(authenticated_user),
+    time_service: TimeService = Depends(get_time_service),
 ):
     """
     1) Sets selected order to "IN PROGRESS"
@@ -64,23 +69,28 @@ async def accept_drive(
     now = time_service.utcnow()
     suggestion = await driver_service.get_suggestion(user.email, accept_drive_request.order_id)
     if not suggestion or suggestion.expires_at < now:
-        raise HTTPException(status_code=HTTPStatus.NOT_ACCEPTABLE, detail={"message": "Suggestion not exists or expired"})
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_ACCEPTABLE, detail={"message": "Suggestion not exists or expired"}
+        )
 
     order_ids = [int(order["id"]) for order in suggestion.passenger_orders]
     for order_id in order_ids:
-        await passenger_service.set_status_to_drive_order(order_id=order_id, new_status=PassengerDriveOrderStatus.ACTIVE)
+        await passenger_service.set_status_to_drive_order(
+            order_id=order_id, new_status=PassengerDriveOrderStatus.ACTIVE
+        )
 
     await passenger_service.release_unchosen_orders_from_freeze(accept_drive_request.email, order_ids)
-    accept_success = await knapsack_service.accept_solution(user_id=accept_drive_request.email, solution_id=accept_drive_request.order_id)
+    accept_success = await knapsack_service.accept_solution(
+        user_id=accept_drive_request.email, solution_id=accept_drive_request.order_id
+    )
     return {"acceptSuccess": accept_success}
 
 
 @router.post("/reject-drives")
 async def reject_drive(
-        reject_drives_request: DriverRejectDrive,
-        knapsack_service: KnapsackService = Depends(get_knapsack_service),
-        passenger_service: PassengerService = Depends(get_passenger_service)
-
+    reject_drives_request: DriverRejectDrive,
+    knapsack_service: KnapsackService = Depends(get_knapsack_service),
+    passenger_service: PassengerService = Depends(get_passenger_service),
 ):
     """
     1) Releases frozen drives
@@ -97,7 +107,6 @@ async def order_details(
     passenger_service: PassengerService = Depends(get_passenger_service),
     time_service: TimeService = Depends(get_time_service),
 ) -> DriveDetails:
-
     return DriveDetails(
         time=time_service.now(),
         id=drive_id,
@@ -138,7 +147,7 @@ async def order_details(
                 price=10,
             ),
         ],
-        total_price=20
+        total_price=20,
     )
 
 
@@ -157,33 +166,32 @@ def is_order_acceptable(order: Any, limits: dict[Limit, LimitValues]) -> bool:
     return True
 
 
-async def get_top_candidates(current_location,
-                             passenger_service: PassengerService,
-                             limits: dict[Limit, LimitValues],
-                             driver_id: str,
-                             ) -> list[KnapsackItem]:
+async def get_top_candidates(
+    current_location,
+    passenger_service: PassengerService,
+    limits: dict[Limit, LimitValues],
+    driver_id: str,
+) -> list[KnapsackItem]:
     candidates = []
     orders = await passenger_service.get_top_order_candidates(
-        candidates_amount=CANDIDATES_AMOUNT,
-        current_location=current_location,
-        driver_id=driver_id
-    )  # TODO this should change the state of this order to "FREEZE" in DB
+        candidates_amount=CANDIDATES_AMOUNT, current_location=current_location, driver_id=driver_id
+    )
     for order in orders:
         if not is_order_acceptable(order=order, limits=limits):
             await passenger_service.release_order_from_freeze(driver_id, order.id)
             continue
-        item = KnapsackItem(id=order.id, volume=order.passengers_amount,
-                            value=(-1 * order.distance_from_driver))  # TODO calculate volume, value, id might be the Order id from DB
+        item = KnapsackItem(
+            id=order.id, volume=order.passengers_amount, value=(-1 * order.distance_from_driver)
+        )
 
         candidates.append(item)
 
     return candidates
 
 
-async def release_unchosen_orders(suggestions: list[KnapsackItem],
-                                  passenger_service: PassengerService = Depends(get_passenger_service)
-
-                                  ) -> None:
+async def release_unchosen_orders(
+    suggestions: list[KnapsackItem], passenger_service: PassengerService = Depends(get_passenger_service)
+) -> None:
     """
     1) extract order_ids from suggestions
     2) for every frozen entry - if it frozen because of current service - release it

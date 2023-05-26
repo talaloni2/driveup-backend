@@ -6,8 +6,13 @@ import pytest
 from httpx import AsyncClient, Response, Request, HTTPStatusError
 
 from model.requests.knapsack import KnapsackItem
-from model.responses.knapsack import SuggestedSolution, AcceptSolutionResponse, RejectSolutionResponse, \
-    KnapsackSolution, ItemClaimedResponse
+from model.responses.knapsack import (
+    SuggestedSolution,
+    AcceptSolutionResponse,
+    RejectSolutionResponse,
+    KnapsackSolution,
+    ItemClaimedResponse,
+)
 from model.suggested_solutions_actions_statuses import AcceptResult, RejectResult
 from service.knapsack_service import KnapsackService
 from service.time_service import TimeService
@@ -29,7 +34,9 @@ async def test_suggest_solution():
     item = KnapsackItem(id=get_random_string(), value=2, volume=1)
     solutions = {get_random_string(): KnapsackSolution(algorithm="aaa", items=[item])}
     client.post = AsyncMock(
-        return_value=_get_response(SuggestedSolution(time=datetime.now(), solutions=solutions, expires_at=datetime.now()).json())
+        return_value=_get_response(
+            SuggestedSolution(time=datetime.now(), solutions=solutions, expires_at=datetime.now()).json()
+        )
     )
 
     result = await service.suggest_solution(get_random_email(), 1, [item])
@@ -107,9 +114,7 @@ async def test_reject_solution_error():
 async def test_is_item_claimed(is_claimed):
     client = AsyncMock(AsyncClient)
     service = KnapsackService(client, TimeService())
-    client.get = AsyncMock(
-        return_value=_get_response(ItemClaimedResponse(is_claimed=is_claimed).json())
-    )
+    client.get = AsyncMock(return_value=_get_response(ItemClaimedResponse(is_claimed=is_claimed).json()))
 
     is_claimed_response = await service.is_ride_request_claimed(get_random_string())
     assert is_claimed_response == is_claimed

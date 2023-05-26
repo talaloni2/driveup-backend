@@ -35,7 +35,6 @@ class PassengerService:
         self._session = session
 
     async def save(self, order: PassengerDriveOrder) -> PassengerDriveOrder:
-
         async with self._session.begin_nested():
             self._session.add(order)
 
@@ -45,29 +44,41 @@ class PassengerService:
 
     async def get_by_user_email(self, email: str) -> PassengerDriveOrder:
         # async with self._session.begin():
-        res = await self._session.execute(select(PassengerDriveOrder).where(PassengerDriveOrder.email == email).limit(1))
+        res = await self._session.execute(
+            select(PassengerDriveOrder).where(PassengerDriveOrder.email == email).limit(1)
+        )
         return res.scalar_one_or_none()
 
     async def get_by_order_id(self, order_id: int) -> PassengerDriveOrder:
         # async with self._session.begin():
-        res = await self._session.execute(select(PassengerDriveOrder).where(PassengerDriveOrder.id == order_id).limit(1))
+        res = await self._session.execute(
+            select(PassengerDriveOrder).where(PassengerDriveOrder.id == order_id).limit(1)
+        )
         return res.scalar_one_or_none()
 
     async def get_active_by_order_id(self, order_id: int) -> PassengerDriveOrder:
         # async with self._session.begin():
-        res = await self._session.execute(select(PassengerDriveOrder).where(PassengerDriveOrder.id == order_id, PassengerDriveOrder.status == PassengerDriveOrderStatus.ACTIVE).limit(1))
+        res = await self._session.execute(
+            select(PassengerDriveOrder)
+            .where(PassengerDriveOrder.id == order_id, PassengerDriveOrder.status == PassengerDriveOrderStatus.ACTIVE)
+            .limit(1)
+        )
         return res.scalar_one_or_none()
 
     async def set_status_to_drive_order(self, order_id: int, new_status: str):
-        #async with self._session.begin():
         # async with self._session.begin():
-        await self._session.execute(update(PassengerDriveOrder).where((PassengerDriveOrder.id == order_id)).values(status=new_status))
+        # async with self._session.begin():
+        await self._session.execute(
+            update(PassengerDriveOrder).where((PassengerDriveOrder.id == order_id)).values(status=new_status)
+        )
 
     async def set_frozen_by(self, order_id: int, freezer_email: str = None):
-        #async with self._session.begin():
+        # async with self._session.begin():
         if freezer_email:
             # async with self._session.begin():
-            await self._session.execute(update(PassengerDriveOrder).where((PassengerDriveOrder.id == order_id)).values(frozen_by=freezer_email))
+            await self._session.execute(
+                update(PassengerDriveOrder).where((PassengerDriveOrder.id == order_id)).values(frozen_by=freezer_email)
+            )
 
     async def delete(self, drive: PassengerDriveOrder) -> None:
         # async with self._session.begin():
@@ -80,7 +91,9 @@ class PassengerService:
         """
 
         # async with self._session.begin():
-        results = await self._session.execute(text(GET_CLOSEST_ORDERS_QUERY), dict(latitude=current_location[0], longitude=current_location[1]))
+        results = await self._session.execute(
+            text(GET_CLOSEST_ORDERS_QUERY), dict(latitude=current_location[0], longitude=current_location[1])
+        )
         orders = results.fetchall()
 
         for order in orders:
@@ -91,25 +104,33 @@ class PassengerService:
 
     async def release_order_from_freeze(self, email, order_id: int):
         # async with self._session.begin():
-        await self._session.execute(update(PassengerDriveOrder).where(PassengerDriveOrder.status == "FROZEN", PassengerDriveOrder.frozen_by == email,
-                                                                           PassengerDriveOrder.id == order_id).values(status="NEW", frozen_by=None))
+        await self._session.execute(
+            update(PassengerDriveOrder)
+            .where(
+                PassengerDriveOrder.status == "FROZEN",
+                PassengerDriveOrder.frozen_by == email,
+                PassengerDriveOrder.id == order_id,
+            )
+            .values(status="NEW", frozen_by=None)
+        )
 
-    async def release_unchosen_orders_from_freeze(self, email, chosen_order_ids: Optional[list[int]]=None):
+    async def release_unchosen_orders_from_freeze(self, email, chosen_order_ids: Optional[list[int]] = None):
         if chosen_order_ids:
             # async with self._session.begin():
-            await self._session.execute(update(PassengerDriveOrder).where(PassengerDriveOrder.status == "FROZEN", PassengerDriveOrder.frozen_by == email,
-                                                                               PassengerDriveOrder.id.notin_(chosen_order_ids)).values(status="NEW", frozen_by=None))
+            await self._session.execute(
+                update(PassengerDriveOrder)
+                .where(
+                    PassengerDriveOrder.status == "FROZEN",
+                    PassengerDriveOrder.frozen_by == email,
+                    PassengerDriveOrder.id.notin_(chosen_order_ids),
+                )
+                .values(status="NEW", frozen_by=None)
+            )
             return
 
         # async with self._session.begin():
         await self._session.execute(
-                update(PassengerDriveOrder).where(PassengerDriveOrder.status == "FROZEN", PassengerDriveOrder.frozen_by == email).values(status="NEW", frozen_by=None))
-
-
-
-
-
-
-
-
-
+            update(PassengerDriveOrder)
+            .where(PassengerDriveOrder.status == "FROZEN", PassengerDriveOrder.frozen_by == email)
+            .values(status="NEW", frozen_by=None)
+        )

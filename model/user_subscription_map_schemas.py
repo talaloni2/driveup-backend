@@ -3,7 +3,7 @@ from typing import Optional, Generic, TypeVar
 from pydantic import BaseModel, Field
 from pydantic.generics import GenericModel
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 class UserSubscriptionMapSchema(BaseModel):

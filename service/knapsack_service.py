@@ -7,8 +7,12 @@ from httpx import AsyncClient
 
 from logger import logger
 from model.requests.knapsack import KnapsackItem, KnapsackSolverRequest, AcceptSolutionRequest, RejectSolutionsRequest
-from model.responses.knapsack import SuggestedSolution, AcceptSolutionResponse, RejectSolutionResponse, \
-    ItemClaimedResponse
+from model.responses.knapsack import (
+    SuggestedSolution,
+    AcceptSolutionResponse,
+    RejectSolutionResponse,
+    ItemClaimedResponse,
+)
 from model.suggested_solutions_actions_statuses import AcceptResult, RejectResult
 from service.time_service import TimeService
 

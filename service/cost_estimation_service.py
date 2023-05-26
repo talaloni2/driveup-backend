@@ -15,8 +15,9 @@ class CostEstimationService:
         for tariff_class, tariff_times in self._cost_estimation_config.tariff_times_mapping.items():
             for tariff_time in tariff_times:
                 if tariff_time.contains(reservation_date):
-                    return self._calculate_fare(directions,
-                                                self._cost_estimation_config.tariff_rates_mapping[tariff_class])
+                    return self._calculate_fare(
+                        directions, self._cost_estimation_config.tariff_rates_mapping[tariff_class]
+                    )
 
     def _get_discount_factor(self) -> float:
         return round((100 - self._cost_estimation_config.discount_percent) / 100.0, 2)

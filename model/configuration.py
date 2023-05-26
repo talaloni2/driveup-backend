@@ -62,10 +62,9 @@ class CostEstimationConfig:
             TariffClass.C: Tariff(2.6, 2.6),
         }
 
-        tariff_a_times: list[TimeRange] = (
-                [TimeRange(a, time(6), time(21)) for a in (6, 0, 1, 2, 3)]
-                + [TimeRange(4, time(6), time(16))]
-        )
+        tariff_a_times: list[TimeRange] = [TimeRange(a, time(6), time(21)) for a in (6, 0, 1, 2, 3)] + [
+            TimeRange(4, time(6), time(16))
+        ]
         tariff_b_times: list[TimeRange] = (
             [TimeRange(a, time(21, 1), time.max) for a in (6, 0, 1, 2)]
             + [TimeRange(a, time(), time(6)) for a in (0, 1, 2, 3)]

@@ -28,7 +28,9 @@ class SubscriptionHandlerService:
 
         return SubscriptionHandlerResponse(**{**response.json(), **{"code": response.status_code}})
 
-    async def create_user_subscription_map(self, subscription_name: str, user_email: str, card_owner_id: str, card_number: str, cvv: str, **kwargs) -> SubscriptionHandlerResponse:
+    async def create_user_subscription_map(
+        self, subscription_name: str, user_email: str, card_owner_id: str, card_number: str, cvv: str, **kwargs
+    ) -> SubscriptionHandlerResponse:
         request = SubscriptionHandlerCreateUserSubscriptionMapRequest(
             subscription_name=subscription_name,
             user_email=user_email,

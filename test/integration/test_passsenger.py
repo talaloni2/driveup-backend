@@ -11,24 +11,22 @@ pytestmart = pytest.mark.asyncio
 EMAIL = "a@b.com"
 PASSENGER_AMOUNT = 1
 ADDRESS1_lat = 1
-ADDRESS1_lon  =1
+ADDRESS1_lon = 1
 ADDRESS2_lat = 2
-ADDRESS2_lon =2
+ADDRESS2_lon = 2
 ORDER_ID = 1
 
 
 async def test_post_add_drive_order(test_client: TestClient):
     parameter = DriveOrderRequestParam(
-        currentUserEmail = EMAIL,
-        startLat= ADDRESS1_lat,
-        startLon= ADDRESS1_lon,
-        destinationLat= ADDRESS2_lat,
-        destinationLon= ADDRESS2_lon,
-        numberOfPassengers= 1,
+        currentUserEmail=EMAIL,
+        startLat=ADDRESS1_lat,
+        startLon=ADDRESS1_lon,
+        destinationLat=ADDRESS2_lat,
+        destinationLon=ADDRESS2_lon,
+        numberOfPassengers=1,
     )
-    order_new_drive_request = PassengerDriveOrderRequest(
-        parameter=parameter
-    )
+    order_new_drive_request = PassengerDriveOrderRequest(parameter=parameter)
     resp = await test_client.post(
         url="/passenger/order-drive",
         req_body=order_new_drive_request,
@@ -47,9 +45,7 @@ async def test_get_drive(test_client: TestClient):
         destinationLon=ADDRESS2_lon,
         numberOfPassengers=1,
     )
-    order_new_drive_request = PassengerDriveOrderRequest(
-        parameter=parameter
-    )
+    order_new_drive_request = PassengerDriveOrderRequest(parameter=parameter)
     resp = await test_client.post(
         url="/passenger/order-drive",
         req_body=order_new_drive_request,

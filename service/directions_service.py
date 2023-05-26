@@ -28,5 +28,9 @@ class DirectionsService:
         return _get_example_directions()
 
 
-if __name__ == '__main__':
-    print(asyncio.new_event_loop().run_until_complete(DirectionsService("mock", MagicMock(), "").get_directions(None, None)))
+if __name__ == "__main__":
+    print(
+        asyncio.new_event_loop().run_until_complete(
+            DirectionsService("mock", MagicMock(), "").get_directions(None, None)
+        )
+    )
