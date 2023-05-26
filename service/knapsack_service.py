@@ -7,14 +7,20 @@ from httpx import AsyncClient
 
 from logger import logger
 from model.requests.knapsack import KnapsackItem, KnapsackSolverRequest, AcceptSolutionRequest, RejectSolutionsRequest
-from model.responses.knapsack import SuggestedSolution, AcceptSolutionResponse, RejectSolutionResponse, \
-    ItemClaimedResponse
+from model.responses.knapsack import (
+    SuggestedSolution,
+    AcceptSolutionResponse,
+    RejectSolutionResponse,
+    ItemClaimedResponse,
+)
 from model.suggested_solutions_actions_statuses import AcceptResult, RejectResult
+from service.time_service import TimeService
 
 
 class KnapsackService:
-    def __init__(self, http_client: AsyncClient):
+    def __init__(self, http_client: AsyncClient, time_service: TimeService):
         self._client: AsyncClient = http_client
+        self._time_service = time_service
 
     async def suggest_solution(self, user_id: str, capacity: int, rides: list[KnapsackItem]) -> SuggestedSolution:
         request = KnapsackSolverRequest(items=rides, volume=capacity, knapsack_id=user_id)
@@ -23,7 +29,7 @@ class KnapsackService:
             logger.error(f"Got unexpected status: {response.status_code} from knapsack backend: {response.content}")
             response.raise_for_status()
         elif response.status_code == HTTPStatus.NO_CONTENT:
-            return SuggestedSolution(time=datetime.now(), solutions={}, expires_at=datetime.now())
+            return SuggestedSolution(time=self._time_service.now(), solutions={}, expires_at=self._time_service.now())
 
         return SuggestedSolution(**response.json())
 
@@ -53,7 +59,7 @@ class KnapsackService:
 
 async def _usage_example():
     client = AsyncClient(base_url="http://localhost:8001")
-    service = KnapsackService(client)
+    service = KnapsackService(client, TimeService())
 
     def _get_random_string():
         return str(uuid4())

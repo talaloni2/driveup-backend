@@ -7,6 +7,8 @@ class DriveOrderRequestParam(BaseModel):
     destinationLat: float
     destinationLon: float
     numberOfPassengers: int
+
+
 class PassengerDriveOrderRequest(BaseModel):
     parameter: DriveOrderRequestParam = Field(...)
 

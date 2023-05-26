@@ -1,19 +1,21 @@
 import asyncio
 from typing import Generator, NamedTuple
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from fastapi import HTTPException
 from httpx import AsyncClient
 
-from component_factory import get_config, get_migration_service
+from component_factory import get_config, get_migration_service, get_directions_service
 from controllers.utils import AuthenticatedUser, authenticated_user
 from model.configuration import Config
+from model.responses.directions_api import DirectionsApiResponse
 from model.responses.user import UserHandlerResponse
 from model.user_schemas import RequestUser, UserSchema
 from server import app
+from service.directions_service import DirectionsService
 from test.utils.test_client import TestClient
-from test.utils.utils import get_random_string
+from test.utils.utils import get_random_string, get_random_email
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -32,6 +34,10 @@ async def config() -> Config:
         db_pass=original.db_pass,
         knapsack_service_url=original.knapsack_service_url,
         geocoding_api_key=original.geocoding_api_key,
+        directions_api_key="MOCK",
+        db_url=None,
+        subscriptions_handler_base_url="MOCK",
+        users_handler_base_url="MOCK",
     )
 
 
@@ -44,8 +50,19 @@ def event_loop() -> Generator:
 
 
 @pytest.fixture
-async def test_client(event_loop) -> TestClient:
-    app.dependency_overrides[authenticated_user] = lambda: AuthenticatedUser(email="sheker@g.com", token="MOCK")  # Override auth
+def mock_directions_api():
+    directions_response = DirectionsApiResponse(distance_meters=4 * 1000, duration_seconds=10 * 60)
+    directions_service_mock: DirectionsService = MagicMock()
+    directions_service_mock.get_directions = AsyncMock(return_value=directions_response)
+    app.dependency_overrides[get_directions_service] = lambda: directions_service_mock
+    yield
+    del app.dependency_overrides[get_directions_service]
+
+
+@pytest.fixture
+async def test_client(event_loop, mock_directions_api) -> TestClient:
+    email = get_random_email()
+    app.dependency_overrides[authenticated_user] = lambda: AuthenticatedUser(email=email, token="MOCK")
     async with AsyncClient(app=app, base_url="http://test") as client:
         yield TestClient(client)
 
@@ -68,23 +85,23 @@ class TestUser(NamedTuple):
 @pytest.fixture()
 async def test_user(unauthenticated, test_client) -> TestUser:
     new_username = f"test_user_{get_random_string()}@g.com"
-    token = (await test_client.post(
-        url="/users/",
-        req_body=RequestUser(parameter=UserSchema(
-            email=new_username,
-            password="1234",
-            phone_number=new_username,
-            full_name=new_username,
-        )),
-        resp_model=UserHandlerResponse
-    )).result["token"]
+    token = (
+        await test_client.post(
+            url="/users/",
+            req_body=RequestUser(
+                parameter=UserSchema(
+                    email=new_username,
+                    password="1234",
+                    phone_number=new_username,
+                    full_name=new_username,
+                )
+            ),
+            resp_model=UserHandlerResponse,
+        )
+    ).result["token"]
     yield TestUser(email=new_username, token=token)
 
-    await test_client.delete(
-        url="/users/delete",
-        headers={"Authorization": f"Bearer {token}"}
-    )
-
+    await test_client.delete(url="/users/delete", headers={"Authorization": f"Bearer {token}"})
 
 
 @pytest.fixture()

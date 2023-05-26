@@ -148,6 +148,7 @@ services:
       SERVER_PORT: 8000
       SUBSCRIPTIONS_HANDLER_BASE_URL: http://subscriptions-backend:8000
       USERS_HANDLER_BASE_URL: http://users-backend:8000
+      DIRECTIONS_API_KEY: MOCK-GET-REAL-ONE
     networks:
       - everything
 

@@ -40,15 +40,22 @@ class UserHandlerService:
 
         return UserHandlerGetByEmailResponse(**response.json())
 
-    async def update_user(self, email: str, token: str, full_name: Optional[str], car_model: Optional[str],
-                          car_color: Optional[str], plate_number: Optional[str], **kwargs) -> UserHandlerResponse:
+    async def update_user(
+        self,
+        email: str,
+        token: str,
+        full_name: Optional[str],
+        car_model: Optional[str],
+        car_color: Optional[str],
+        plate_number: Optional[str],
+        **kwargs,
+    ) -> UserHandlerResponse:
         request = UserHandlerUpdateUserRequest(
-            full_name=full_name,
-            car_model=car_model,
-            car_color=car_color,
-            plate_number=plate_number
+            full_name=full_name, car_model=car_model, car_color=car_color, plate_number=plate_number
         )
-        response = await self._client.put(f"/users/{email}", json={"parameter": request.dict()}, headers={"Authorization": f"Bearer {token}"})
+        response = await self._client.put(
+            f"/users/{email}", json={"parameter": request.dict()}, headers={"Authorization": f"Bearer {token}"}
+        )
         response.raise_for_status()
 
         return UserHandlerResponse(**response.json())

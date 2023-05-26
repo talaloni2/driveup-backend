@@ -22,7 +22,9 @@ async def upload_image(
     user: AuthenticatedUser = Depends(authenticated_user),
 ) -> CreateImageResponse:
     image_data = normalizer.normalize(await image.read())
-    image_instance = Image(image_data=image_data, filename=normalizer.normalize_file_name(image.filename), related_email=user.email)
+    image_instance = Image(
+        image_data=image_data, filename=normalizer.normalize_file_name(image.filename), related_email=user.email
+    )
 
     await delete_image(image_service, user)
     await image_service.insert(image_instance)

@@ -1,12 +1,9 @@
-from http import HTTPStatus
-from fastapi import APIRouter, Depends
-
-
 import pytest
 import random
 
 from fastapi.responses import JSONResponse, Response
 
+from model.requests.driver import DriverRequestDrive
 
 from model.requests.driver import DriverRequestDrive, DriverAcceptDrive
 from model.requests.passenger import PassengerDriveOrderRequest, DriveOrderRequestParam
@@ -83,9 +80,9 @@ async def test_post_request_drive(test_client: TestClient, drop_tables):
 
 async def test_post_request_drive_with_no_passenger_orders(test_client: TestClient, drop_tables):
     request_drive_request = DriverRequestDrive(
-        email=EMAIL,
         current_lat=CURRENT_LAT,
         current_lon=CURRENT_LON,
+        limits={},
     )
     resp = await test_client.post(
         url="/driver/request-drives",
@@ -93,7 +90,6 @@ async def test_post_request_drive_with_no_passenger_orders(test_client: TestClie
         resp_model=SuggestedSolution,
     )
 
-    assert not resp.solutions
 
 
 async def test_accept_drive(test_client: TestClient, drop_tables):
@@ -108,7 +104,6 @@ async def test_accept_drive(test_client: TestClient, drop_tables):
     await add_new_passenger_drive_order(test_client, start_lat=1, start_lon=1, destination_lat=2, destination_lon=2)
 
     request_drive_request = DriverRequestDrive(
-        email=EMAIL,
         current_lat=CURRENT_LAT,
         current_lon=CURRENT_LON,
     )

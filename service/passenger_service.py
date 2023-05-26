@@ -71,7 +71,6 @@ class PassengerService:
         )
 
     async def set_frozen_by(self, order_id: int, freezer_email: str = None):
-        # async with self._session.begin():
         if freezer_email:
             # async with self._session.begin():
             await self._session.execute(

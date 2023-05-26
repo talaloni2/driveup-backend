@@ -17,20 +17,38 @@ class DriverService:
                 expires_at=suggestions.expires_at,
                 passengers_amount=s.total_volume,
                 passenger_orders=[i.dict() for i in s.items],
-                status=DriveOrderStatus.PENDING
+                status=DriveOrderStatus.PENDING,
+                time=suggestions.time,
+                algorithm=s.algorithm,
             )
             for sid, s in suggestions.solutions.items()
         ]
-        # async with self._session.begin():
         self._session.add_all(suggestions)
 
-    async def get_unchosen_suggestion(self, driver_id: str, suggestion_id: str) -> DriverDriveOrder:
-        res = await self._session.execute(select(DriverDriveOrder).where(DriverDriveOrder.driver_id == driver_id, DriverDriveOrder.id == suggestion_id))
+    async def get_suggestion(self, driver_id: str, suggestion_id: str) -> DriverDriveOrder:
+        res = await self._session.execute(
+            select(DriverDriveOrder).where(
+                DriverDriveOrder.driver_id == driver_id, DriverDriveOrder.id == suggestion_id
+            )
+        )
         return res.scalar_one_or_none()
 
     async def reject_solutions(self, driver_id: str):
-        await self._session.execute(delete(DriverDriveOrder).where(DriverDriveOrder.driver_id == driver_id,
-                                                                   DriverDriveOrder.status == DriveOrderStatus.PENDING))
+        await self._session.execute(
+            delete(DriverDriveOrder).where(
+                DriverDriveOrder.driver_id == driver_id, DriverDriveOrder.status == DriveOrderStatus.PENDING
+            )
+        )
+
+    async def get_suggestions(self, driver_id: str) -> list[DriverDriveOrder]:
+        return [
+            a[0]
+            for a in await self._session.execute(
+                select(DriverDriveOrder).where(
+                    DriverDriveOrder.driver_id == driver_id, DriverDriveOrder.status == DriveOrderStatus.PENDING
+                )
+            )
+        ]
 
     async def drop_table_driver_drive_order(self):
         await self._session.execute(delete(DriverDriveOrder))
