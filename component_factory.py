@@ -6,8 +6,10 @@ from httpx import AsyncClient
 from sqlalchemy import NullPool
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncEngine, async_sessionmaker, AsyncSession
 
-from model.configuration import Config
+from model.configuration import Config, CostEstimationConfig
+from service.cost_estimation_service import CostEstimationService
 from service.db_migration_service import DatabaseMigrationService
+from service.directions_service import DirectionsService
 from service.driver_service import DriverService
 from service.geocoding_service import GeocodingService
 from service.image_normalization_service import ImageNormalizationService
@@ -16,21 +18,23 @@ from service.knapsack_service import KnapsackService
 from service.rating_service import RatingService
 from service.passenger_service import PassengerService
 from service.subscription_handler_service import SubscriptionHandlerService
+from service.time_service import TimeService
 from service.user_handler_service import UserHandlerService
 
 
 def get_config() -> Config:
     return Config(
         server_port=int(os.getenv("SERVER_PORT", "8000")),
-        db_user=os.environ["DB_USER"],
-        db_pass=os.environ["DB_PASS"],
-        db_host=os.environ["DB_HOST"],
-        db_port=int(os.environ["DB_PORT"]),
+        db_user=os.getenv("DB_USER"),
+        db_pass=os.getenv("DB_PASS"),
+        db_host=os.getenv("DB_HOST"),
+        db_port=int(os.getenv("DB_PORT", "0")),
         knapsack_service_url=os.getenv("KNAPSACK_SERVICE_URL", "http://localhost:8001"),
-        db_url=os.environ["DB_URL"] if "DB_URL" in os.environ else None,
+        db_url=os.getenv("DB_URL"),
         users_handler_base_url=os.environ["USERS_HANDLER_BASE_URL"],
         subscriptions_handler_base_url=os.environ["SUBSCRIPTIONS_HANDLER_BASE_URL"],
         geocoding_api_key=os.getenv("GEOCODING_API_KEY"),
+        directions_api_key=os.getenv("DIRECTIONS_API_KEY"),
     )
 
 
@@ -101,11 +105,27 @@ def get_subscription_handler_service(config: Config = Depends(get_config)):
     return SubscriptionHandlerService(client)
 
 
-def get_knapsack_service(config: Config = Depends(get_config)):
+def get_time_service() -> TimeService:
+    return TimeService()
+
+
+def get_knapsack_service(config: Config = Depends(get_config), time_service: TimeService = Depends(get_time_service)):
     client = AsyncClient(base_url=config.knapsack_service_url)
-    return KnapsackService(client)
+    return KnapsackService(client, time_service)
 
 
 def get_geocoding_service(config: Config = Depends(get_config)):
     client = AsyncClient(base_url="https://geocode.search.hereapi.com/v1")
     return GeocodingService(client, config.geocoding_api_key)
+
+
+def get_directions_service(config: Config = Depends(get_config)) -> DirectionsService:
+    return DirectionsService(config.directions_api_key, http_client=AsyncClient(base_url=config.knapsack_service_url))
+
+
+def get_cost_estimation_config() -> CostEstimationConfig:
+    return CostEstimationConfig()
+
+
+def get_cost_estimation_service(config: CostEstimationConfig = Depends(get_cost_estimation_config)) -> CostEstimationService:
+    return CostEstimationService(config)

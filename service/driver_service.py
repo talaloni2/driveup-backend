@@ -17,11 +17,12 @@ class DriverService:
                 expires_at=suggestions.expires_at,
                 passengers_amount=s.total_volume,
                 passenger_orders=[i.dict() for i in s.items],
-                status=DriveOrderStatus.PENDING
+                status=DriveOrderStatus.PENDING,
+                time=suggestions.time,
+                algorithm=s.algorithm,
             )
             for sid, s in suggestions.solutions.items()
         ]
-        # async with self._session.begin():
         self._session.add_all(suggestions)
 
     async def get_suggestion(self, driver_id: str, suggestion_id: str) -> DriverDriveOrder:
@@ -31,3 +32,7 @@ class DriverService:
     async def reject_solutions(self, driver_id: str):
         await self._session.execute(delete(DriverDriveOrder).where(DriverDriveOrder.driver_id == driver_id,
                                                                    DriverDriveOrder.status == DriveOrderStatus.PENDING))
+
+    async def get_suggestions(self, driver_id: str) -> list[DriverDriveOrder]:
+        return [a[0] for a in await self._session.execute(select(DriverDriveOrder).where(DriverDriveOrder.driver_id == driver_id,
+                                                                   DriverDriveOrder.status == DriveOrderStatus.PENDING))]

@@ -1,19 +1,13 @@
 from datetime import datetime
-from typing import Optional
 
 from model.base_dto import BaseModel
-
 from model.requests.knapsack import KnapsackItem
+from model.responses.geocode import Geocode
 
 
 class DriverSuggestedDrives(BaseModel):
     driver_id: int
     suggested_drives: list[KnapsackItem]
-
-
-class Geocode(BaseModel):
-    latitude: float
-    longitude: float
 
 
 class OrderLocation(BaseModel):
@@ -29,7 +23,3 @@ class DriveDetails(BaseModel):
     id: str
     order_locations: list[OrderLocation]
     total_price: int
-
-#
-# class DriverGetDriveResponse(BaseModel):
-#     drive_id: int

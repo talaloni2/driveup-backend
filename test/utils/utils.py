@@ -6,4 +6,4 @@ def get_random_string() -> str:
 
 
 def get_random_email() -> str:
-    return f"{get_random_string()}@gmail.com"
+    return f"test_user_{get_random_string()}@gmail.com"

@@ -1,21 +1,21 @@
-from datetime import datetime
 from http import HTTPStatus
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from component_factory import get_passenger_service, get_knapsack_service, get_driver_service
+from component_factory import get_passenger_service, get_knapsack_service, get_driver_service, get_time_service
 from controllers.utils import AuthenticatedUser, authenticated_user
 from mappings.factory_mapping import LIMITS_MAPPING
 from model.passenger_drive_order import PassengerDriveOrderStatus
 from model.requests.driver import DriverRequestDrive, DriverAcceptDrive, DriverRejectDrive, Limit, LimitValues
 from model.requests.knapsack import KnapsackItem
-from model.responses.driver import DriveDetails, OrderLocation, \
-    Geocode  # DriverAcceptDriveResponse, DriverRejectDriveResponse
+from model.responses.driver import DriveDetails, OrderLocation
+from model.responses.geocode import Geocode
 from model.responses.knapsack import SuggestedSolution
 from service.driver_service import DriverService
 from service.knapsack_service import KnapsackService
 from service.passenger_service import PassengerService
+from service.time_service import TimeService
 
 router = APIRouter()
 
@@ -40,7 +40,6 @@ async def order_new_drive(
     await driver_service.reject_solutions(user.email)
     await knapsack_service.reject_solutions(user.email)
     suggestions = await knapsack_service.suggest_solution(user.email, 4, rides)
-    # TODO adjust to required response structure - Yarden
     suggestions = get_suggestions_with_total_value_volume(suggestions)
     await driver_service.save_suggestions(user.email, suggestions)
 
@@ -54,6 +53,7 @@ async def accept_drive(
         passenger_service: PassengerService = Depends(get_passenger_service),
         driver_service: DriverService = Depends(get_driver_service),
         user: AuthenticatedUser = Depends(authenticated_user),
+        time_service: TimeService = Depends(get_time_service),
 ):
     """
     1) Sets selected order to "IN PROGRESS"
@@ -61,7 +61,7 @@ async def accept_drive(
     3) Sends accept-solution to knapsack
     """
     # TODO: along with setting status to active, we need to assign drive id
-    now = datetime.utcnow()
+    now = time_service.utcnow()
     suggestion = await driver_service.get_suggestion(user.email, accept_drive_request.order_id)
     if not suggestion or suggestion.expires_at < now:
         raise HTTPException(status_code=HTTPStatus.NOT_ACCEPTABLE, detail={"message": "Suggestion not exists or expired"})
@@ -95,10 +95,11 @@ async def reject_drive(
 async def order_details(
     drive_id: str,
     passenger_service: PassengerService = Depends(get_passenger_service),
+    time_service: TimeService = Depends(get_time_service),
 ) -> DriveDetails:
 
     return DriveDetails(
-        time=datetime.now(),
+        time=time_service.now(),
         id=drive_id,
         order_locations=[
             OrderLocation(

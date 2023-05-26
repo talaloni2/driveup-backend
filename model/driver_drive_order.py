@@ -15,11 +15,10 @@ class DriveOrderStatus(str, Enum):
 class DriverDriveOrder(Base):
     __tablename__ = DRIVER_DRIVE_ORDER_TABLE
     id = Column(String, primary_key=True)
+    time = Column(DateTime)
     driver_id = Column(String)
     expires_at = Column(DateTime)
     passengers_amount = Column(Integer)
     passenger_orders = Column(ARRAY(JSON))
     status = Column(String)
-
-
-
+    algorithm = Column(String)

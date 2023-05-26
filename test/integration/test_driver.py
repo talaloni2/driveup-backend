@@ -1,17 +1,7 @@
-from http import HTTPStatus
-from fastapi import APIRouter, Depends
-
-
 import pytest
 
-from model.requests.driver import DriverRequestDrive,DriverAcceptDrive, DriverRejectDrive
-from model.responses.passenger import DriveOrderResponse, GetDriveResponse
+from model.requests.driver import DriverRequestDrive
 from test.utils.test_client import TestClient
-from service.passenger_service import PassengerService
-from component_factory import get_passenger_service
-
-
-from test.utils.utils import get_random_email
 
 pytestmart = pytest.mark.asyncio
 
@@ -22,11 +12,11 @@ CURRENT_LON = 1
 ORDER_ID = 1
 
 
-async def test_post_request_drive(test_client: TestClient):
+async def test_post_request_drive(test_client: TestClient, ensure_db_schema: None):
     request_drive_request = DriverRequestDrive(
-        email=EMAIL,
         current_lat=CURRENT_LAT,
         current_lon=CURRENT_LON,
+        limits={},
     )
     resp = await test_client.post(
         url="/driver/request-drives",
@@ -37,9 +27,9 @@ async def test_post_request_drive(test_client: TestClient):
     assert 'time' in resp_json
     assert 'solutions' in resp_json
 
-async def test_accept_drive(test_client: TestClient):
+
+async def test_accept_drive(test_client: TestClient, ensure_db_schema: None):
     request_drive_request = DriverRequestDrive(
-        email=EMAIL,
         current_lat=CURRENT_LAT,
         current_lon=CURRENT_LON,
     )
