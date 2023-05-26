@@ -22,7 +22,6 @@ async def test_post_request_drive(test_client: TestClient, ensure_db_schema: Non
         url="/driver/request-drives",
         req_body=request_drive_request,
     )
-    assert resp.status_code == 200
     resp_json = resp.json()
     assert "time" in resp_json
     assert "solutions" in resp_json

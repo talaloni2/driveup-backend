@@ -31,8 +31,8 @@ def get_config() -> Config:
         db_port=int(os.getenv("DB_PORT", "0")),
         knapsack_service_url=os.getenv("KNAPSACK_SERVICE_URL", "http://localhost:8001"),
         db_url=os.getenv("DB_URL"),
-        users_handler_base_url=os.environ["USERS_HANDLER_BASE_URL"],
-        subscriptions_handler_base_url=os.environ["SUBSCRIPTIONS_HANDLER_BASE_URL"],
+        users_handler_base_url=os.getenv("USERS_HANDLER_BASE_URL"),
+        subscriptions_handler_base_url=os.getenv("SUBSCRIPTIONS_HANDLER_BASE_URL"),
         geocoding_api_key=os.getenv("GEOCODING_API_KEY"),
         directions_api_key=os.getenv("DIRECTIONS_API_KEY"),
     )

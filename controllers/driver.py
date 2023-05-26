@@ -180,9 +180,7 @@ async def get_top_candidates(
         if not is_order_acceptable(order=order, limits=limits):
             await passenger_service.release_order_from_freeze(driver_id, order.id)
             continue
-        item = KnapsackItem(
-            id=order.id, volume=order.passengers_amount, value=(-1 * order.distance_from_driver)
-        )
+        item = KnapsackItem(id=order.id, volume=order.passengers_amount, value=(-1 * order.distance_from_driver))
 
         candidates.append(item)
 
