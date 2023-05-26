@@ -1,11 +1,8 @@
+from http import HTTPStatus
+
 import pytest
-import random
 
-from fastapi.responses import JSONResponse, Response
-
-from model.requests.driver import DriverRequestDrive
-
-from model.requests.driver import DriverRequestDrive, DriverAcceptDrive
+from model.requests.driver import DriverRequestDrive, DriverAcceptDrive, DriverRejectDrive
 from model.requests.passenger import PassengerDriveOrderRequest, DriveOrderRequestParam
 
 from model.responses.passenger import DriveOrderResponse
@@ -91,7 +88,6 @@ async def test_post_request_drive_with_no_passenger_orders(test_client: TestClie
     )
 
 
-
 async def test_accept_drive(test_client: TestClient, drop_tables):
     # test happy flow
     """
@@ -118,18 +114,10 @@ async def test_accept_drive(test_client: TestClient, drop_tables):
             random_order_id = id
             break
 
-    accept_drive_request = DriverAcceptDrive(
-        email=EMAIL,
-        order_id=random_order_id
-    )
+    accept_drive_request = DriverAcceptDrive(email=EMAIL, order_id=random_order_id)
 
-    resp = await test_client.post(
-        url="/driver/accept-drive",
-        req_body=accept_drive_request,
-        #assert_status=HTTPStatus.OK
-    )
+    await test_client.post(url="/driver/accept-drive", req_body=accept_drive_request, assert_status=HTTPStatus.OK)
 
-    assert 1==1
 
 async def test_accept_drive_non_existing_order_id(test_client: TestClient, drop_tables):
     await add_new_passenger_drive_order(test_client, start_lat=1, start_lon=1, destination_lat=2, destination_lon=2)
@@ -146,15 +134,33 @@ async def test_accept_drive_non_existing_order_id(test_client: TestClient, drop_
         resp_model=SuggestedSolution,
     )
 
-    accept_drive_request = DriverAcceptDrive(
-        email=EMAIL,
-        order_id='not_existing_order_id'
-    )
+    accept_drive_request = DriverAcceptDrive(email=EMAIL, order_id="not_existing_order_id")
 
     await test_client.post(
-        url="/driver/accept-drive",
-        req_body=accept_drive_request,
-        assert_status=HTTPStatus.NOT_ACCEPTABLE
+        url="/driver/accept-drive", req_body=accept_drive_request, assert_status=HTTPStatus.NOT_ACCEPTABLE
     )
 
 
+async def test_reject_drive(test_client: TestClient, drop_tables):
+    # test happy flow
+    """
+    1) send passenger add order request
+    2) send driver order drive request
+    3) send reject drives
+    4) assert ok
+    """
+    await add_new_passenger_drive_order(test_client, start_lat=1, start_lon=1, destination_lat=2, destination_lon=2)
+
+    request_drive_request = DriverRequestDrive(
+        current_lat=CURRENT_LAT,
+        current_lon=CURRENT_LON,
+    )
+    await test_client.post(
+        url="/driver/request-drives",
+        req_body=request_drive_request,
+        resp_model=SuggestedSolution,
+    )
+
+    reject_drive_request = DriverRejectDrive(email=EMAIL)
+
+    await test_client.post(url="/driver/reject-drives", req_body=reject_drive_request, assert_status=HTTPStatus.OK)

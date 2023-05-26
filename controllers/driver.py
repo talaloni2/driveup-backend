@@ -63,7 +63,7 @@ async def accept_drive(
     driver_service: DriverService = Depends(get_driver_service),
     user: AuthenticatedUser = Depends(authenticated_user),
     time_service: TimeService = Depends(get_time_service),
-) :
+):
     """
     1) Sets selected order to "IN PROGRESS"
     2) Release frozen orders form DB
@@ -83,18 +83,18 @@ async def accept_drive(
             order_id=order_id, new_status=PassengerDriveOrderStatus.ACTIVE
         )
 
-    await passenger_service.release_unchosen_orders_from_freeze(accept_drive_request.email, order_ids)
+    await passenger_service.release_unchosen_orders_from_freeze(user.email, order_ids)
     accept_success = await knapsack_service.accept_solution(
-        user_id=accept_drive_request.email, solution_id=accept_drive_request.order_id
+        user_id=user.email, solution_id=accept_drive_request.order_id
     )
     return {"acceptSuccess": accept_success}
 
 
 @router.post("/reject-drives")
 async def reject_drive(
-        reject_drives_request: DriverRejectDrive,
-        knapsack_service: KnapsackService = Depends(get_knapsack_service),
-        passenger_service: PassengerService = Depends(get_passenger_service),
+    reject_drives_request: DriverRejectDrive,
+    knapsack_service: KnapsackService = Depends(get_knapsack_service),
+    passenger_service: PassengerService = Depends(get_passenger_service),
 ):
     """
     1) Releases frozen drives
@@ -104,11 +104,11 @@ async def reject_drive(
     resp = await knapsack_service.reject_solutions(user_id=reject_drives_request.email)
     return {"rejectSuccess": resp}
 
+
 @router.post("/delete_all_drives")
-async def delete_drives(
-        driver_service: DriverService = Depends(get_driver_service)
-):
+async def delete_drives(driver_service: DriverService = Depends(get_driver_service)):
     await driver_service.drop_table_driver_drive_order()
+
 
 @router.get("/drive-details/{drive_id}")
 async def order_details(
@@ -194,5 +194,3 @@ async def get_top_candidates(
         candidates.append(item)
 
     return candidates
-
-
