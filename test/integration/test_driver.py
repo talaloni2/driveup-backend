@@ -6,8 +6,11 @@ import pytest
 
 from model.requests.driver import DriverRequestDrive,DriverAcceptDrive, DriverRejectDrive
 from model.responses.passenger import DriveOrderResponse, GetDriveResponse
+from model.responses.knapsack import SuggestedSolution
 from test.utils.test_client import TestClient
 from service.passenger_service import PassengerService
+from service.driver_service import DriverService
+
 from component_factory import get_passenger_service
 
 
@@ -23,19 +26,24 @@ ORDER_ID = 1
 
 
 async def test_post_request_drive(test_client: TestClient):
+    await test_client.post(
+        url="/driver/delete_all_drives",
+    )
+
     request_drive_request = DriverRequestDrive(
         email=EMAIL,
         current_lat=CURRENT_LAT,
         current_lon=CURRENT_LON,
     )
-    resp = await test_client.post(
+    await test_client.post(
         url="/driver/request-drives",
         req_body=request_drive_request,
+        resp_model=SuggestedSolution,
     )
-    assert resp.status_code == 200
-    resp_json = resp.json()
-    assert 'time' in resp_json
-    assert 'solutions' in resp_json
+
+
+
+
 
 async def test_accept_drive(test_client: TestClient):
     request_drive_request = DriverRequestDrive(

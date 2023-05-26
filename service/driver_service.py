@@ -31,3 +31,6 @@ class DriverService:
     async def reject_solutions(self, driver_id: str):
         await self._session.execute(delete(DriverDriveOrder).where(DriverDriveOrder.driver_id == driver_id,
                                                                    DriverDriveOrder.status == DriveOrderStatus.PENDING))
+
+    async def drop_table_driver_drive_order(self):
+        await self._session.execute(delete(DriverDriveOrder))

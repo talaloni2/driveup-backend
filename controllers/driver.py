@@ -40,7 +40,6 @@ async def order_new_drive(
     await driver_service.reject_solutions(user.email)
     await knapsack_service.reject_solutions(user.email)
     suggestions = await knapsack_service.suggest_solution(user.email, 4, rides)
-    # TODO adjust to required response structure - Yarden
     suggestions = get_suggestions_with_total_value_volume(suggestions)
     await driver_service.save_suggestions(user.email, suggestions)
 
@@ -80,7 +79,6 @@ async def reject_drive(
         reject_drives_request: DriverRejectDrive,
         knapsack_service: KnapsackService = Depends(get_knapsack_service),
         passenger_service: PassengerService = Depends(get_passenger_service)
-
 ):
     """
     1) Releases frozen drives
@@ -89,6 +87,11 @@ async def reject_drive(
     await passenger_service.release_unchosen_orders_from_freeze(reject_drives_request.email)
     resp = knapsack_service.reject_solutions(user_id=reject_drives_request.email)
 
+@router.post("/delete_all_drives")
+async def delete_drives(
+        driver_service: DriverService = Depends(get_driver_service)
+):
+    await driver_service.drop_table_driver_drive_order()
 
 @router.get("/drive-details/{drive_id}")
 async def order_details(
@@ -178,12 +181,14 @@ async def get_top_candidates(current_location,
     return candidates
 
 
-async def release_unchosen_orders(suggestions: list[KnapsackItem],
-                                  passenger_service: PassengerService = Depends(get_passenger_service)
+# async def release_unchosen_orders(suggestions: list[KnapsackItem],
+#                                   passenger_service: PassengerService = Depends(get_passenger_service)
+#
+#                                   ) -> None:
+#     """
+#     1) extract order_ids from suggestions
+#     2) for every frozen entry - if it frozen because of current service - release it
+#     """
+#     orders = await passenger_service.release_frozen_orders()
 
-                                  ) -> None:
-    """
-    1) extract order_ids from suggestions
-    2) for every frozen entry - if it frozen because of current service - release it
-    """
-    orders = await passenger_service.release_frozen_orders()
+

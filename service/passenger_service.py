@@ -91,19 +91,19 @@ class PassengerService:
 
     async def release_order_from_freeze(self, email, order_id: int):
         # async with self._session.begin():
-        await self._session.execute(update(PassengerDriveOrder).where(PassengerDriveOrder.status == "FROZEN", PassengerDriveOrder.frozen_by == email,
-                                                                           PassengerDriveOrder.id == order_id).values(status="NEW", frozen_by=None))
+        await self._session.execute(update(PassengerDriveOrder).where(PassengerDriveOrder.status == PassengerDriveOrderStatus.FROZEN, PassengerDriveOrder.frozen_by == email,
+                                                                           PassengerDriveOrder.id == order_id).values(status=PassengerDriveOrderStatus.NEW, frozen_by=None))
 
     async def release_unchosen_orders_from_freeze(self, email, chosen_order_ids: Optional[list[int]]=None):
         if chosen_order_ids:
             # async with self._session.begin():
-            await self._session.execute(update(PassengerDriveOrder).where((PassengerDriveOrder.status == "FROZEN", PassengerDriveOrder.frozen_by == email,
-                                                                               PassengerDriveOrder.id.notin_(chosen_order_ids))).values(status="NEW", frozen_by=None))
+            await self._session.execute(update(PassengerDriveOrder).where((PassengerDriveOrder.status == PassengerDriveOrderStatus.FROZEN, PassengerDriveOrder.frozen_by == email,
+                                                                               PassengerDriveOrder.id.notin_(chosen_order_ids))).values(status=PassengerDriveOrderStatus.NEW, frozen_by=None))
             return
 
         # async with self._session.begin():
         await self._session.execute(
-                update(PassengerDriveOrder).where(PassengerDriveOrder.status == "FROZEN", PassengerDriveOrder.frozen_by == email).values(status="NEW", frozen_by=None))
+                update(PassengerDriveOrder).where(PassengerDriveOrder.status == PassengerDriveOrderStatus.FROZEN, PassengerDriveOrder.frozen_by == email).values(status=PassengerDriveOrderStatus.NEW, frozen_by=None))
 
 
 
