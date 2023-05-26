@@ -1,7 +1,7 @@
 import textwrap
 from typing import Optional
 
-from sqlalchemy import text, select, update, delete
+from sqlalchemy import text, select, update, delete, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from model.passenger_drive_order import PassengerDriveOrder, PASSENGER_DRIVE_ORDER_TABLE, PassengerDriveOrderStatus
@@ -66,10 +66,8 @@ class PassengerService:
         return res.scalar_one_or_none()
 
     async def set_status_to_drive_order(self, order_id: int, new_status: str):
-        # async with self._session.begin():
-        # async with self._session.begin():
         await self._session.execute(
-            update(PassengerDriveOrder).where((PassengerDriveOrder.id == order_id)).values(status=new_status)
+            update(PassengerDriveOrder).where(PassengerDriveOrder.id == order_id).values(status=new_status)
         )
 
     async def set_frozen_by(self, order_id: int, freezer_email: str = None):
@@ -120,7 +118,7 @@ class PassengerService:
             await self._session.execute(
                 update(PassengerDriveOrder)
                 .where(
-                    (
+                    and_(
                         PassengerDriveOrder.status == PassengerDriveOrderStatus.FROZEN,
                         PassengerDriveOrder.frozen_by == email,
                         PassengerDriveOrder.id.notin_(chosen_order_ids),

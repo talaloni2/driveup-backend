@@ -24,7 +24,7 @@ class DriverService:
         # async with self._session.begin():
         self._session.add_all(suggestions)
 
-    async def get_suggestion(self, driver_id: str, suggestion_id: str) -> DriverDriveOrder:
+    async def get_unchosen_suggestion(self, driver_id: str, suggestion_id: str) -> DriverDriveOrder:
         res = await self._session.execute(select(DriverDriveOrder).where(DriverDriveOrder.driver_id == driver_id, DriverDriveOrder.id == suggestion_id))
         return res.scalar_one_or_none()
 

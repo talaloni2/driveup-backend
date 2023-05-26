@@ -13,9 +13,13 @@ from model.requests.knapsack import KnapsackItem
 from model.responses.driver import DriveDetails, OrderLocation, \
     Geocode  # DriverAcceptDriveResponse, DriverRejectDriveResponse
 from model.responses.knapsack import SuggestedSolution
+from fastapi.responses import JSONResponse, Response
+
 from service.driver_service import DriverService
 from service.knapsack_service import KnapsackService
 from service.passenger_service import PassengerService
+from model.responses.error_response import MessageResponse
+
 
 router = APIRouter()
 
@@ -53,26 +57,27 @@ async def accept_drive(
         passenger_service: PassengerService = Depends(get_passenger_service),
         driver_service: DriverService = Depends(get_driver_service),
         user: AuthenticatedUser = Depends(authenticated_user),
-):
+) :
     """
     1) Sets selected order to "IN PROGRESS"
     2) Release frozen orders form DB
     3) Sends accept-solution to knapsack
     """
     # TODO: along with setting status to active, we need to assign drive id
-    suggestion = await driver_service.get_suggestion(user.email, accept_drive_request.order_id)
+    suggestion = await driver_service.get_unchosen_suggestion(user.email, accept_drive_request.order_id)
     if not suggestion or suggestion.expires_at < datetime.now():
         raise HTTPException(status_code=HTTPStatus.NOT_ACCEPTABLE, detail={"message": "Suggestion not exists or expired"})
 
-    order_ids = [order["id"] for order in suggestion.passenger_orders]
+    order_ids = [int(order["id"]) for order in suggestion.passenger_orders]
     for order_id in order_ids:
-        await passenger_service.set_status_to_drive_order(order_id=order_id, new_status=PassengerDriveOrderStatus.ACTIVE)
+        await passenger_service.set_status_to_drive_order(order_id=order_id, new_status="ACTIVE")
 
     await passenger_service.release_unchosen_orders_from_freeze(accept_drive_request.email, order_ids)
-    resp = knapsack_service.accept_solution(user_id=accept_drive_request.email, solution_id='solution_id')
-    if resp != 200:  # TODO real statuses
-        return 500
+    resp = await knapsack_service.accept_solution(user_id=accept_drive_request.email, solution_id=accept_drive_request.order_id)
 
+    if not resp:  # TODO real statuses
+        return JSONResponse(MessageResponse(message="Drive was not accepted").json(), status_code=HTTPStatus.INTERNAL_SERVER_ERROR)
+    return MessageResponse(message="Success")
 
 @router.post("/reject-drives")
 async def reject_drive(
