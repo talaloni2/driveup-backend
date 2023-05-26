@@ -1,3 +1,4 @@
+from datetime import datetime
 from http import HTTPStatus
 from typing import Any
 
@@ -6,12 +7,13 @@ from fastapi import APIRouter, Depends, HTTPException
 from component_factory import get_passenger_service, get_knapsack_service, get_driver_service, get_time_service
 from controllers.utils import AuthenticatedUser, authenticated_user
 from mappings.factory_mapping import LIMITS_MAPPING
+from model.driver_drive_order import DriverDriveOrder
 from model.passenger_drive_order import PassengerDriveOrderStatus
 from model.requests.driver import DriverRequestDrive, DriverAcceptDrive, DriverRejectDrive, Limit, LimitValues
 from model.requests.knapsack import KnapsackItem
 from model.responses.driver import DriveDetails, OrderLocation
 from model.responses.geocode import Geocode
-from model.responses.knapsack import SuggestedSolution
+from model.responses.knapsack import SuggestedSolution, KnapsackSolution
 from service.driver_service import DriverService
 from service.knapsack_service import KnapsackService
 from service.passenger_service import PassengerService
@@ -22,13 +24,25 @@ router = APIRouter()
 CANDIDATES_AMOUNT = 2
 
 
+def _orders_to_suggestions(current_drive_orders: list[DriverDriveOrder], time_service: TimeService):
+    return SuggestedSolution(
+        time=_adjust_timezone(current_drive_orders[0].time, time_service),
+        expires_at=_adjust_timezone(current_drive_orders[0].expires_at, time_service),
+        solutions={
+            k.id: KnapsackSolution(items=k.passenger_orders, algorithm=k.algorithm) for k in current_drive_orders
+        }
+    )
+
+
 @router.post("/request-drives")
 async def order_new_drive(
     order_request: DriverRequestDrive,
+    force_reject: bool = True,
     knapsack_service: KnapsackService = Depends(get_knapsack_service),
     user: AuthenticatedUser = Depends(authenticated_user),
     passenger_service: PassengerService = Depends(get_passenger_service),
     driver_service: DriverService = Depends(get_driver_service),
+    time_service: TimeService = Depends(get_time_service),
 ) -> SuggestedSolution:
     """
     1) Gets 10 drives from DB
@@ -36,19 +50,27 @@ async def order_new_drive(
     3) Sends suggest_solution request
     4) Returns suggestion to FE
     """
-    rides = await get_top_candidates(
-        current_location=[order_request.current_lat, order_request.current_lon],
-        passenger_service=passenger_service,
-        limits=order_request.limits,
-        driver_id=user.email,
-    )
+    if not force_reject:
+        current_drive_orders: list[DriverDriveOrder] = await driver_service.get_suggestions(user.email)
+        if current_drive_orders:
+            suggestions = _orders_to_suggestions(current_drive_orders, time_service)
+            return get_suggestions_with_total_value_volume(suggestions)
+
+    rides = await get_top_candidates(current_location=[order_request.current_lat, order_request.current_lon],
+                                     passenger_service=passenger_service, limits=order_request.limits, driver_id=user.email)
     await driver_service.reject_solutions(user.email)
     await knapsack_service.reject_solutions(user.email)
     suggestions = await knapsack_service.suggest_solution(user.email, 4, rides)
     suggestions = get_suggestions_with_total_value_volume(suggestions)
     await driver_service.save_suggestions(user.email, suggestions)
+    suggestions.time = _adjust_timezone(suggestions.time, time_service)
+    suggestions.expires_at = _adjust_timezone(suggestions.expires_at, time_service)
 
     return suggestions
+
+
+def _adjust_timezone(dt: datetime, time_service: TimeService):
+    return dt.astimezone(time_service.timezone) + dt.astimezone(time_service.timezone).utcoffset()
 
 
 @router.post("/accept-drive")

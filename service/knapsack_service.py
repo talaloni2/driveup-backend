@@ -31,7 +31,8 @@ class KnapsackService:
         elif response.status_code == HTTPStatus.NO_CONTENT:
             return SuggestedSolution(time=self._time_service.now(), solutions={}, expires_at=self._time_service.now())
 
-        return SuggestedSolution(**response.json())
+        suggestion = SuggestedSolution(**response.json())
+        return suggestion
 
     async def accept_solution(self, user_id: str, solution_id: str) -> bool:
         request = AcceptSolutionRequest(solution_id=solution_id, knapsack_id=user_id)
