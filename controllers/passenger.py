@@ -56,3 +56,9 @@ async def get_drive_by_order_id(
     order = await passenger_service.get_active_by_order_id(order_id)
     return _to_get_drive_response(order)
 
+@router.post("/delete_all_orders")
+async def delete_drives(
+        passenger_service: PassengerService = Depends(get_passenger_service)
+):
+    await passenger_service.drop_table_passenger_drive_order()
+
