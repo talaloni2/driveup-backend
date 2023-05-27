@@ -2,50 +2,30 @@ from http import HTTPStatus
 
 import pytest
 
+from component_factory import get_passenger_service, create_db_engine, get_database_url, get_config, \
+    get_db_session_maker, get_driver_service
 from model.requests.driver import DriverRequestDrive, DriverAcceptDrive, DriverRejectDrive
 from model.requests.passenger import PassengerDriveOrderRequest, DriveOrderRequestParam
 from model.responses.knapsack import SuggestedSolution
 from model.responses.passenger import DriveOrderResponse
 from model.responses.passenger import GetDriveResponse
+from service.driver_service import DriverService
+from service.passenger_service import PassengerService
 from test.utils.test_client import TestClient
-from test.utils.utils import get_random_email
-
-pytestmart = pytest.mark.asyncio
+from test.utils.utils import get_random_email, random_latitude, random_longitude
 
 EMAIL = "a@b.com"
 PASSENGER_AMOUNT = 1
-CURRENT_LAT = 1
-CURRENT_LON = 1
-ADDRESS1_lat = 1
-ADDRESS1_lon = 1
-ADDRESS2_lat = 2
-ADDRESS2_lon = 2
-
-
-@pytest.fixture
-async def clear_tables(test_client):
-    await test_client.post(
-        url="/driver/delete_all_drives",
-    )
-    await test_client.post(
-        url="/passenger/delete_all_orders",
-    )
 
 
 async def add_new_passenger_drive_order(
     test_client: TestClient,
-    email=EMAIL,
-    start_lat=ADDRESS1_lat,
-    start_lon=ADDRESS1_lon,
-    destination_lat=ADDRESS1_lon,
-    destination_lon=ADDRESS2_lon,
 ):
     parameter = DriveOrderRequestParam(
-        currentUserEmail=email,
-        startLat=start_lat,
-        startLon=start_lon,
-        destinationLat=destination_lat,
-        destinationLon=destination_lon,
+        startLat=random_latitude(),
+        startLon=random_longitude(),
+        destinationLat=random_latitude(),
+        destinationLon=random_longitude(),
         numberOfPassengers=1,
     )
     order_new_drive_request = PassengerDriveOrderRequest(parameter=parameter)
@@ -56,14 +36,15 @@ async def add_new_passenger_drive_order(
     )
 
 
-async def test_post_request_drive(test_client: TestClient, clear_tables):
+@pytest.mark.asyncio
+async def test_post_request_drive(test_client: TestClient, clear_orders_tables):
     # test for happy flow
-    await add_new_passenger_drive_order(test_client, start_lat=1, start_lon=1, destination_lat=2, destination_lon=2)
-    await add_new_passenger_drive_order(test_client, start_lat=3, start_lon=3, destination_lat=5, destination_lon=5)
+    await add_new_passenger_drive_order(test_client)
+    await add_new_passenger_drive_order(test_client)
 
     request_drive_request = DriverRequestDrive(
-        current_lat=CURRENT_LAT,
-        current_lon=CURRENT_LON,
+        current_lat=random_latitude(),
+        current_lon=random_longitude(),
     )
     await test_client.post(
         url="/driver/request-drives",
@@ -72,10 +53,11 @@ async def test_post_request_drive(test_client: TestClient, clear_tables):
     )
 
 
-async def test_post_request_drive_with_no_passenger_orders(test_client: TestClient, clear_tables):
+@pytest.mark.asyncio
+async def test_post_request_drive_with_no_passenger_orders(test_client: TestClient, clear_orders_tables):
     request_drive_request = DriverRequestDrive(
-        current_lat=CURRENT_LAT,
-        current_lon=CURRENT_LON,
+        current_lat=random_latitude(),
+        current_lon=random_longitude(),
         limits={},
     )
     await test_client.post(
@@ -85,7 +67,8 @@ async def test_post_request_drive_with_no_passenger_orders(test_client: TestClie
     )
 
 
-async def test_accept_drive(test_client: TestClient, clear_tables):
+@pytest.mark.asyncio
+async def test_accept_drive(test_client: TestClient, clear_orders_tables):
     # test happy flow
     """
     1) send passenger add order request
@@ -94,11 +77,11 @@ async def test_accept_drive(test_client: TestClient, clear_tables):
     4) assert ok
     """
     random_order_id = None
-    await add_new_passenger_drive_order(test_client, start_lat=1, start_lon=1, destination_lat=2, destination_lon=2)
+    await add_new_passenger_drive_order(test_client)
 
     request_drive_request = DriverRequestDrive(
-        current_lat=CURRENT_LAT,
-        current_lon=CURRENT_LON,
+        current_lat=random_latitude(),
+        current_lon=random_longitude(),
     )
     resp = await test_client.post(
         url="/driver/request-drives",
@@ -116,12 +99,13 @@ async def test_accept_drive(test_client: TestClient, clear_tables):
     await test_client.post(url="/driver/accept-drive", req_body=accept_drive_request, assert_status=HTTPStatus.OK)
 
 
-async def test_accept_drive_non_existing_order_id(test_client: TestClient, clear_tables):
-    await add_new_passenger_drive_order(test_client, start_lat=1, start_lon=1, destination_lat=2, destination_lon=2)
+@pytest.mark.asyncio
+async def test_accept_drive_non_existing_order_id(test_client: TestClient, clear_orders_tables):
+    await add_new_passenger_drive_order(test_client)
 
     request_drive_request = DriverRequestDrive(
-        current_lat=CURRENT_LAT,
-        current_lon=CURRENT_LON,
+        current_lat=random_latitude(),
+        current_lon=random_longitude(),
     )
 
     await test_client.post(
@@ -137,7 +121,8 @@ async def test_accept_drive_non_existing_order_id(test_client: TestClient, clear
     )
 
 
-async def test_reject_drive(test_client: TestClient, clear_tables):
+@pytest.mark.asyncio
+async def test_reject_drive(test_client: TestClient, clear_orders_tables):
     # test happy flow
     """
     1) send passenger add order request
@@ -145,11 +130,11 @@ async def test_reject_drive(test_client: TestClient, clear_tables):
     3) send reject drives
     4) assert ok
     """
-    await add_new_passenger_drive_order(test_client, start_lat=1, start_lon=1, destination_lat=2, destination_lon=2)
+    await add_new_passenger_drive_order(test_client)
 
     request_drive_request = DriverRequestDrive(
-        current_lat=CURRENT_LAT,
-        current_lon=CURRENT_LON,
+        current_lat=random_latitude(),
+        current_lon=random_longitude(),
     )
     await test_client.post(
         url="/driver/request-drives",
@@ -162,13 +147,13 @@ async def test_reject_drive(test_client: TestClient, clear_tables):
     await test_client.post(url="/driver/reject-drives", req_body=reject_drive_request, assert_status=HTTPStatus.OK)
 
 
+@pytest.mark.asyncio
 async def test_request_drives_suggestion_already_exists(test_client):
     parameter = DriveOrderRequestParam(
-        currentUserEmail=get_random_email(),
-        startLat=2,
-        startLon=2,
-        destinationLat=3,
-        destinationLon=3,
+        startLat=random_latitude(),
+        startLon=random_longitude(),
+        destinationLat=random_latitude(),
+        destinationLon=random_longitude(),
         numberOfPassengers=1,
     )
     order_new_drive_request = PassengerDriveOrderRequest(parameter=parameter)
@@ -179,8 +164,8 @@ async def test_request_drives_suggestion_already_exists(test_client):
     )
 
     request_drive_request = DriverRequestDrive(
-        current_lat=CURRENT_LAT,
-        current_lon=CURRENT_LON,
+        current_lat=random_latitude(),
+        current_lon=random_longitude(),
         limits={},
     )
     first_resp = await test_client.post(
@@ -199,13 +184,13 @@ async def test_request_drives_suggestion_already_exists(test_client):
     assert first_resp == second_resp
 
 
+@pytest.mark.asyncio
 async def test_accept_drive_passenger_order_updated(test_client):
     parameter = DriveOrderRequestParam(
-        currentUserEmail=get_random_email(),
-        startLat=2,
-        startLon=2,
-        destinationLat=3,
-        destinationLon=3,
+        startLat=random_latitude(),
+        startLon=random_longitude(),
+        destinationLat=random_latitude(),
+        destinationLon=random_longitude(),
         numberOfPassengers=1,
     )
     order_new_drive_request = PassengerDriveOrderRequest(parameter=parameter)
@@ -216,8 +201,8 @@ async def test_accept_drive_passenger_order_updated(test_client):
     )
 
     request_drive_request = DriverRequestDrive(
-        current_lat=CURRENT_LAT,
-        current_lon=CURRENT_LON,
+        current_lat=random_latitude(),
+        current_lon=random_longitude(),
         limits={},
     )
     drive_offers = await test_client.post(

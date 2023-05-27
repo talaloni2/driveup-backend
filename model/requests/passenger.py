@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
 
+
 class DriveOrderRequestParam(BaseModel):
-    currentUserEmail: str
     startLat: float
     startLon: float
     destinationLat: float

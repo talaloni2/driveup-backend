@@ -3,10 +3,10 @@ from typing import Generator, NamedTuple
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from fastapi import HTTPException
 from httpx import AsyncClient
 
-from component_factory import get_config, get_migration_service, get_directions_service
+from component_factory import get_config, get_migration_service, get_directions_service, get_db_session_maker, \
+    create_db_engine, get_database_url, get_passenger_service, get_driver_service
 from controllers.utils import AuthenticatedUser, authenticated_user
 from model.configuration import Config
 from model.responses.directions_api import DirectionsApiResponse
@@ -112,3 +112,11 @@ def authenticated_passenger(test_client):
 @pytest.fixture(scope="session", autouse=True)
 async def ensure_db_schema(event_loop) -> None:
     await get_migration_service().migrate()
+
+
+@pytest.fixture
+async def clear_orders_tables(ensure_db_schema):
+    async with get_db_session_maker(create_db_engine(get_database_url(get_config())))() as session:
+        async with session.begin():
+            await get_passenger_service(session).delete_all_passenger_drive_order()
+            await get_driver_service(session).delete_all_driver_drive_orders()

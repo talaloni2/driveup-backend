@@ -14,12 +14,11 @@ from model.requests.knapsack import KnapsackItem
 from model.responses.driver import DriveDetails, OrderLocation
 from model.responses.geocode import Geocode
 from model.responses.knapsack import SuggestedSolution, KnapsackSolution
+from model.responses.success import SuccessResponse
 from service.driver_service import DriverService
 from service.knapsack_service import KnapsackService
 from service.passenger_service import PassengerService
 from service.time_service import TimeService
-from model.responses.error_response import MessageResponse
-
 
 router = APIRouter()
 
@@ -83,7 +82,7 @@ async def accept_drive(
     driver_service: DriverService = Depends(get_driver_service),
     user: AuthenticatedUser = Depends(authenticated_user),
     time_service: TimeService = Depends(get_time_service),
-):
+) -> SuccessResponse:
     """
     1) Sets selected order to "IN PROGRESS"
     2) Release frozen orders form DB
@@ -108,7 +107,7 @@ async def accept_drive(
         )
 
     await passenger_service.release_unchosen_orders_from_freeze(user.email, order_ids)
-    return {"acceptSuccess": accept_success}
+    return SuccessResponse(success=accept_success)
 
 
 @router.post("/reject-drives")
@@ -116,19 +115,14 @@ async def reject_drive(
     reject_drives_request: DriverRejectDrive,
     knapsack_service: KnapsackService = Depends(get_knapsack_service),
     passenger_service: PassengerService = Depends(get_passenger_service),
-):
+) -> SuccessResponse:
     """
     1) Releases frozen drives
     2) Sends request to knapsack service
     """
     await passenger_service.release_unchosen_orders_from_freeze(reject_drives_request.email)
     resp = await knapsack_service.reject_solutions(user_id=reject_drives_request.email)
-    return {"rejectSuccess": resp}
-
-
-@router.post("/delete_all_drives")
-async def delete_drives(driver_service: DriverService = Depends(get_driver_service)):
-    await driver_service.drop_table_driver_drive_order()
+    return SuccessResponse(success=resp)
 
 
 @router.get("/drive-details/{drive_id}")

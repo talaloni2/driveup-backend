@@ -8,11 +8,13 @@ from component_factory import (
     get_directions_service,
     get_time_service,
 )
+from controllers.utils import AuthenticatedUser, authenticated_user
 from model.passenger_drive_order import PassengerDriveOrder
 from model.requests.passenger import PassengerDriveOrderRequest
 from model.responses.directions_api import DirectionsApiResponse
 from model.responses.geocode import Geocode
 from model.responses.passenger import DriveOrderResponse, GetDriveResponse
+from model.responses.success import SuccessResponse
 from service.cost_estimation_service import CostEstimationService
 from service.currency_conversion_service import nis_to_usd
 from service.directions_service import DirectionsService
@@ -42,10 +44,11 @@ async def handle_add_drive_order_request(
     cost_estimation_service: CostEstimationService = Depends(get_cost_estimation_service),
     time_service: TimeService = Depends(get_time_service),
     directions_service: DirectionsService = Depends(get_directions_service),
+    user: AuthenticatedUser = Depends(authenticated_user)
 ) -> DriveOrderResponse:
     cost_estimation = await _estimate_cost(cost_estimation_service, directions_service, order_request, time_service)
 
-    drive_order = await add_drive_order(order_request, passenger_service, cost_estimation)
+    drive_order = await add_drive_order(user.email, order_request, passenger_service, cost_estimation)
     return _to_drive_order_response(drive_order)
 
 
@@ -59,10 +62,11 @@ async def _estimate_cost(cost_estimation_service, directions_service, order_requ
 
 
 async def add_drive_order(
+    user_id: str,
     order_request: PassengerDriveOrderRequest, passenger_service: PassengerService, cost_estimation: float
 ) -> PassengerDriveOrder:
     db_drive_order = PassengerDriveOrder(
-        email=order_request.parameter.currentUserEmail,
+        email=user_id,
         passengers_amount=order_request.parameter.numberOfPassengers,
         source_location=[order_request.parameter.startLat, order_request.parameter.startLon],
         dest_location=[order_request.parameter.destinationLat, order_request.parameter.destinationLon],
@@ -73,18 +77,24 @@ async def add_drive_order(
     return order
 
 
-@router.get("/get-drive/{orderId}")
-async def handle_get_drive_request(orderId: int, passenger_service: PassengerService = Depends(get_passenger_service)) -> GetDriveResponse:
-    drive_order_response = await passenger_service.get_by_order_id(orderId)
+@router.get("/get-drive/{order_id}")
+async def handle_get_drive_request(
+    order_id: int,
+    user: AuthenticatedUser = Depends(authenticated_user),
+    passenger_service: PassengerService = Depends(get_passenger_service)
+) -> GetDriveResponse:
+    drive_order_response = await passenger_service.get_by_order_and_user_id(user.email, order_id)
     if not drive_order_response:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail={"message": "Could not find passenger order"})
 
     return _to_get_drive_response(drive_order_response)
 
 
-@router.post("/delete_all_orders")
-async def delete_drives(
-        passenger_service: PassengerService = Depends(get_passenger_service)
-):
-    await passenger_service.drop_table_passenger_drive_order()
-
+@router.delete("/cancel-order/{order_id}")
+async def cancel_order(
+    order_id: int,
+    user: AuthenticatedUser = Depends(authenticated_user),
+    passenger_service: PassengerService = Depends(get_passenger_service),
+) -> SuccessResponse:
+    is_cancelled = await passenger_service.cancel_order(user.email, order_id)
+    return SuccessResponse(success=is_cancelled)
