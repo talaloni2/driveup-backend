@@ -2,12 +2,17 @@ from http import HTTPStatus
 
 import pytest
 
+from model.requests.driver import DriverRequestDrive
+from model.requests.passenger import PassengerDriveOrderRequest, DriveOrderRequestParam
+from model.responses.knapsack import SuggestedSolution
+from model.responses.passenger import DriveOrderResponse
 from model.requests.driver import DriverRequestDrive, DriverAcceptDrive, DriverRejectDrive
 from model.requests.passenger import PassengerDriveOrderRequest, DriveOrderRequestParam
 
 from model.responses.passenger import DriveOrderResponse
 from model.responses.knapsack import SuggestedSolution
 from test.utils.test_client import TestClient
+from test.utils.utils import get_random_email
 
 
 pytestmart = pytest.mark.asyncio
@@ -164,3 +169,42 @@ async def test_reject_drive(test_client: TestClient, drop_tables):
     reject_drive_request = DriverRejectDrive(email=EMAIL)
 
     await test_client.post(url="/driver/reject-drives", req_body=reject_drive_request, assert_status=HTTPStatus.OK)
+
+
+async def test_request_drives_suggestion_already_exists(test_client):
+    parameter = DriveOrderRequestParam(
+        currentUserEmail=get_random_email(),
+        startLat=2,
+        startLon=2,
+        destinationLat=3,
+        destinationLon=3,
+        numberOfPassengers=1,
+    )
+    order_new_drive_request = PassengerDriveOrderRequest(parameter=parameter)
+    await test_client.post(
+        url="/passenger/order-drive",
+        req_body=order_new_drive_request,
+        resp_model=DriveOrderResponse,
+    )
+
+    request_drive_request = DriverRequestDrive(
+        current_lat=CURRENT_LAT,
+        current_lon=CURRENT_LON,
+        limits={},
+    )
+    first_resp = await test_client.post(
+        url="/driver/request-drives",
+        req_body=request_drive_request,
+        resp_model=SuggestedSolution,
+    )
+
+    second_resp = await test_client.post(
+        url="/driver/request-drives?force_reject=false",
+        req_body=request_drive_request,
+        resp_model=SuggestedSolution,
+    )
+
+    assert len(first_resp.solutions) > 0
+    assert first_resp == second_resp
+
+
