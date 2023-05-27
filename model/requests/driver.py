@@ -22,7 +22,6 @@ class DriverRequestDrive(BaseModel):
 
 
 class DriverAcceptDrive(BaseModel):
-    email: str
     order_id: str
 
 

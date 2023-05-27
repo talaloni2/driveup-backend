@@ -1,7 +1,7 @@
 import textwrap
 from typing import Optional
 
-from sqlalchemy import text, select, update
+from sqlalchemy import text, select, update, delete, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from model.passenger_drive_order import PassengerDriveOrder, PASSENGER_DRIVE_ORDER_TABLE, PassengerDriveOrderStatus
@@ -66,14 +66,11 @@ class PassengerService:
         return res.scalar_one_or_none()
 
     async def set_status_to_drive_order(self, order_id: int, new_status: str):
-        # async with self._session.begin():
-        # async with self._session.begin():
         await self._session.execute(
-            update(PassengerDriveOrder).where((PassengerDriveOrder.id == order_id)).values(status=new_status)
+            update(PassengerDriveOrder).where(PassengerDriveOrder.id == order_id).values(status=new_status)
         )
 
     async def set_frozen_by(self, order_id: int, freezer_email: str = None):
-        # async with self._session.begin():
         if freezer_email:
             # async with self._session.begin():
             await self._session.execute(
@@ -107,11 +104,11 @@ class PassengerService:
         await self._session.execute(
             update(PassengerDriveOrder)
             .where(
-                PassengerDriveOrder.status == "FROZEN",
+                PassengerDriveOrder.status == PassengerDriveOrderStatus.FROZEN,
                 PassengerDriveOrder.frozen_by == email,
                 PassengerDriveOrder.id == order_id,
             )
-            .values(status="NEW", frozen_by=None)
+            .values(status=PassengerDriveOrderStatus.NEW, frozen_by=None)
         )
 
     async def release_unchosen_orders_from_freeze(self, email, chosen_order_ids: Optional[list[int]] = None):
@@ -120,17 +117,24 @@ class PassengerService:
             await self._session.execute(
                 update(PassengerDriveOrder)
                 .where(
-                    PassengerDriveOrder.status == "FROZEN",
-                    PassengerDriveOrder.frozen_by == email,
-                    PassengerDriveOrder.id.notin_(chosen_order_ids),
+                    and_(
+                        PassengerDriveOrder.status == PassengerDriveOrderStatus.FROZEN,
+                        PassengerDriveOrder.frozen_by == email,
+                        PassengerDriveOrder.id.notin_(chosen_order_ids),
+                    )
                 )
-                .values(status="NEW", frozen_by=None)
+                .values(status=PassengerDriveOrderStatus.NEW, frozen_by=None)
             )
             return
 
         # async with self._session.begin():
         await self._session.execute(
             update(PassengerDriveOrder)
-            .where(PassengerDriveOrder.status == "FROZEN", PassengerDriveOrder.frozen_by == email)
-            .values(status="NEW", frozen_by=None)
+            .where(
+                PassengerDriveOrder.status == PassengerDriveOrderStatus.FROZEN, PassengerDriveOrder.frozen_by == email
+            )
+            .values(status=PassengerDriveOrderStatus.NEW, frozen_by=None)
         )
+
+    async def drop_table_passenger_drive_order(self):
+        await self._session.execute(delete(PassengerDriveOrder))

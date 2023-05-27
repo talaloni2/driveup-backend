@@ -49,3 +49,6 @@ class DriverService:
                 )
             )
         ]
+
+    async def drop_table_driver_drive_order(self):
+        await self._session.execute(delete(DriverDriveOrder))

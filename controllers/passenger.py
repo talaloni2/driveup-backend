@@ -80,3 +80,11 @@ async def handle_get_drive_request(orderId: int, passenger_service: PassengerSer
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail={"message": "Could not find passenger order"})
 
     return _to_get_drive_response(drive_order_response)
+
+
+@router.post("/delete_all_orders")
+async def delete_drives(
+        passenger_service: PassengerService = Depends(get_passenger_service)
+):
+    await passenger_service.drop_table_passenger_drive_order()
+

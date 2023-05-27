@@ -18,6 +18,8 @@ from service.driver_service import DriverService
 from service.knapsack_service import KnapsackService
 from service.passenger_service import PassengerService
 from service.time_service import TimeService
+from model.responses.error_response import MessageResponse
+
 
 router = APIRouter()
 
@@ -101,9 +103,9 @@ async def accept_drive(
             order_id=order_id, new_status=PassengerDriveOrderStatus.ACTIVE
         )
 
-    await passenger_service.release_unchosen_orders_from_freeze(accept_drive_request.email, order_ids)
+    await passenger_service.release_unchosen_orders_from_freeze(user.email, order_ids)
     accept_success = await knapsack_service.accept_solution(
-        user_id=accept_drive_request.email, solution_id=accept_drive_request.order_id
+        user_id=user.email, solution_id=accept_drive_request.order_id
     )
     return {"acceptSuccess": accept_success}
 
@@ -121,6 +123,11 @@ async def reject_drive(
     await passenger_service.release_unchosen_orders_from_freeze(reject_drives_request.email)
     resp = await knapsack_service.reject_solutions(user_id=reject_drives_request.email)
     return {"rejectSuccess": resp}
+
+
+@router.post("/delete_all_drives")
+async def delete_drives(driver_service: DriverService = Depends(get_driver_service)):
+    await driver_service.drop_table_driver_drive_order()
 
 
 @router.get("/drive-details/{drive_id}")
@@ -207,13 +214,3 @@ async def get_top_candidates(
         candidates.append(item)
 
     return candidates
-
-
-async def release_unchosen_orders(
-    suggestions: list[KnapsackItem], passenger_service: PassengerService = Depends(get_passenger_service)
-) -> None:
-    """
-    1) extract order_ids from suggestions
-    2) for every frozen entry - if it frozen because of current service - release it
-    """
-    orders = await passenger_service.release_frozen_orders()
