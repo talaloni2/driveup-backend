@@ -11,4 +11,3 @@ class DriveOrderRequestParam(BaseModel):
 
 class PassengerDriveOrderRequest(BaseModel):
     parameter: DriveOrderRequestParam = Field(...)
-

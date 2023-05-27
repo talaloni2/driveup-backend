@@ -74,10 +74,7 @@ async def test_cancel_drive(test_client: TestClient):
     )
     assert cancel_result.success
 
-    await test_client.get(
-        url=f"/passenger/get-drive/{resp.order_id}",
-        assert_status=HTTPStatus.NOT_FOUND
-    )
+    await test_client.get(url=f"/passenger/get-drive/{resp.order_id}", assert_status=HTTPStatus.NOT_FOUND)
 
 
 async def test_cancel_drive_fail(test_client: TestClient, clear_orders_tables: None):

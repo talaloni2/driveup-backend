@@ -1,9 +1,16 @@
+import time
 from http import HTTPStatus
 
 import pytest
 
-from component_factory import get_passenger_service, create_db_engine, get_database_url, get_config, \
-    get_db_session_maker, get_driver_service
+from component_factory import (
+    get_passenger_service,
+    create_db_engine,
+    get_database_url,
+    get_config,
+    get_db_session_maker,
+    get_driver_service,
+)
 from model.requests.driver import DriverRequestDrive, DriverAcceptDrive, DriverRejectDrive
 from model.requests.passenger import PassengerDriveOrderRequest, DriveOrderRequestParam
 from model.responses.knapsack import SuggestedSolution
@@ -212,8 +219,7 @@ async def test_accept_drive_passenger_order_updated(test_client):
     )
 
     passenger_order_without_drive = await test_client.get(
-        url=f"/passenger/get-drive/{order_drive_resp.order_id}",
-        resp_model=GetDriveResponse
+        url=f"/passenger/get-drive/{order_drive_resp.order_id}", resp_model=GetDriveResponse
     )
 
     assert len(drive_offers.solutions) > 0, "Solutions must not be empty"
@@ -223,9 +229,9 @@ async def test_accept_drive_passenger_order_updated(test_client):
         req_body=DriverAcceptDrive(order_id=accepted_drive_id),
     )
 
+    time.sleep(0.3)
     passenger_order_with_drive = await test_client.get(
-        url=f"/passenger/get-drive/{order_drive_resp.order_id}",
-        resp_model=GetDriveResponse
+        url=f"/passenger/get-drive/{order_drive_resp.order_id}", resp_model=GetDriveResponse
     )
 
     assert passenger_order_without_drive.drive_id is None

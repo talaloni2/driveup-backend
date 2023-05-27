@@ -5,8 +5,16 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from httpx import AsyncClient
 
-from component_factory import get_config, get_migration_service, get_directions_service, get_db_session_maker, \
-    create_db_engine, get_database_url, get_passenger_service, get_driver_service
+from component_factory import (
+    get_config,
+    get_migration_service,
+    get_directions_service,
+    get_db_session_maker,
+    create_db_engine,
+    get_database_url,
+    get_passenger_service,
+    get_driver_service,
+)
 from controllers.utils import AuthenticatedUser, authenticated_user
 from model.configuration import Config
 from model.responses.directions_api import DirectionsApiResponse

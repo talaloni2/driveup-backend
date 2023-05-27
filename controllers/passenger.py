@@ -44,7 +44,7 @@ async def handle_add_drive_order_request(
     cost_estimation_service: CostEstimationService = Depends(get_cost_estimation_service),
     time_service: TimeService = Depends(get_time_service),
     directions_service: DirectionsService = Depends(get_directions_service),
-    user: AuthenticatedUser = Depends(authenticated_user)
+    user: AuthenticatedUser = Depends(authenticated_user),
 ) -> DriveOrderResponse:
     cost_estimation = await _estimate_cost(cost_estimation_service, directions_service, order_request, time_service)
 
@@ -62,8 +62,7 @@ async def _estimate_cost(cost_estimation_service, directions_service, order_requ
 
 
 async def add_drive_order(
-    user_id: str,
-    order_request: PassengerDriveOrderRequest, passenger_service: PassengerService, cost_estimation: float
+    user_id: str, order_request: PassengerDriveOrderRequest, passenger_service: PassengerService, cost_estimation: float
 ) -> PassengerDriveOrder:
     db_drive_order = PassengerDriveOrder(
         email=user_id,
@@ -81,7 +80,7 @@ async def add_drive_order(
 async def handle_get_drive_request(
     order_id: int,
     user: AuthenticatedUser = Depends(authenticated_user),
-    passenger_service: PassengerService = Depends(get_passenger_service)
+    passenger_service: PassengerService = Depends(get_passenger_service),
 ) -> GetDriveResponse:
     drive_order_response = await passenger_service.get_by_order_and_user_id(user.email, order_id)
     if not drive_order_response:

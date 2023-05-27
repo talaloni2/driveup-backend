@@ -31,7 +31,7 @@ def _orders_to_suggestions(current_drive_orders: list[DriverDriveOrder], time_se
         expires_at=_adjust_timezone(current_drive_orders[0].expires_at, time_service),
         solutions={
             k.id: KnapsackSolution(items=k.passenger_orders, algorithm=k.algorithm) for k in current_drive_orders
-        }
+        },
     )
 
 
@@ -57,8 +57,12 @@ async def order_new_drive(
             suggestions = _orders_to_suggestions(current_drive_orders, time_service)
             return get_suggestions_with_total_value_volume(suggestions)
 
-    rides = await get_top_candidates(current_location=[order_request.current_lat, order_request.current_lon],
-                                     passenger_service=passenger_service, limits=order_request.limits, driver_id=user.email)
+    rides = await get_top_candidates(
+        current_location=[order_request.current_lat, order_request.current_lon],
+        passenger_service=passenger_service,
+        limits=order_request.limits,
+        driver_id=user.email,
+    )
     await driver_service.reject_solutions(user.email)
     await knapsack_service.reject_solutions(user.email)
     suggestions = await knapsack_service.suggest_solution(user.email, 4, rides)

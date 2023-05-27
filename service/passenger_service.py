@@ -57,19 +57,23 @@ class PassengerService:
 
     async def get_by_order_and_user_id(self, user_id: str, order_id: int) -> PassengerDriveOrder:
         res = await self._session.execute(
-            select(PassengerDriveOrder).where(PassengerDriveOrder.email == user_id, PassengerDriveOrder.id == order_id).limit(1)
+            select(PassengerDriveOrder)
+            .where(PassengerDriveOrder.email == user_id, PassengerDriveOrder.id == order_id)
+            .limit(1)
         )
         return res.scalar_one_or_none()
 
     async def cancel_order(self, user_id: str, order_id: int) -> bool:
         await self._session.execute(
-            delete(PassengerDriveOrder)
-            .where(PassengerDriveOrder.email == user_id, PassengerDriveOrder.id == order_id, PassengerDriveOrder.status == PassengerDriveOrderStatus.NEW)
+            delete(PassengerDriveOrder).where(
+                PassengerDriveOrder.email == user_id,
+                PassengerDriveOrder.id == order_id,
+                PassengerDriveOrder.status == PassengerDriveOrderStatus.NEW,
+            )
         )
-        res = (await self._session.execute(
-            select(PassengerDriveOrder)
-            .where(PassengerDriveOrder.id == order_id)
-        )).scalar_one_or_none()
+        res = (
+            await self._session.execute(select(PassengerDriveOrder).where(PassengerDriveOrder.id == order_id))
+        ).scalar_one_or_none()
 
         is_delete_success = res is None
         return is_delete_success
