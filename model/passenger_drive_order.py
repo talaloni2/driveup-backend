@@ -22,6 +22,6 @@ class PassengerDriveOrder(Base):
     status = Column(String, default=PassengerDriveOrderStatus.NEW)
     source_location = Column(ARRAY(Float, dimensions=1))
     dest_location = Column(ARRAY(Float, dimensions=1))
-    drive_id = Column(Integer, default=None)
+    drive_id = Column(String, default=None)
     frozen_by = Column(String)  # driver's email
     estimated_cost = Column(Float)

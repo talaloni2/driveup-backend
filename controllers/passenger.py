@@ -74,7 +74,7 @@ async def add_drive_order(
 
 
 @router.get("/get-drive/{orderId}")
-async def handle_get_drive_request(orderId: int, passenger_service: PassengerService = Depends(get_passenger_service)):
+async def handle_get_drive_request(orderId: int, passenger_service: PassengerService = Depends(get_passenger_service)) -> GetDriveResponse:
     drive_order_response = await passenger_service.get_by_order_id(orderId)
     if not drive_order_response:
         raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail={"message": "Could not find passenger order"})

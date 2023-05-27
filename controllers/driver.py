@@ -96,17 +96,18 @@ async def accept_drive(
         raise HTTPException(
             status_code=HTTPStatus.NOT_ACCEPTABLE, detail={"message": "Suggestion not exists or expired"}
         )
+    accept_success = await knapsack_service.accept_solution(
+        user_id=user.email, solution_id=accept_drive_request.order_id
+    )
 
     order_ids = [int(order["id"]) for order in suggestion.passenger_orders]
     for order_id in order_ids:
+        await passenger_service.activate_drive(order_id=order_id, drive_id=accept_drive_request.order_id)
         await passenger_service.set_status_to_drive_order(
             order_id=order_id, new_status=PassengerDriveOrderStatus.ACTIVE
         )
 
     await passenger_service.release_unchosen_orders_from_freeze(user.email, order_ids)
-    accept_success = await knapsack_service.accept_solution(
-        user_id=user.email, solution_id=accept_drive_request.order_id
-    )
     return {"acceptSuccess": accept_success}
 
 

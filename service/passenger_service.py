@@ -138,3 +138,10 @@ class PassengerService:
 
     async def drop_table_passenger_drive_order(self):
         await self._session.execute(delete(PassengerDriveOrder))
+
+    async def activate_drive(self, order_id: int, drive_id: str):
+        await self._session.execute(
+            update(PassengerDriveOrder)
+            .where(PassengerDriveOrder.id == order_id)
+            .values(status=PassengerDriveOrderStatus.ACTIVE, drive_id=drive_id)
+        )
