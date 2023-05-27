@@ -42,12 +42,12 @@ class PassengerService:
 
         return order
 
-    async def get_by_user_email(self, email: str) -> PassengerDriveOrder:
-        # async with self._session.begin():
+    # noinspection PyTypeChecker
+    async def get_by_user_email(self, email: str, page: int, size: int) -> list[PassengerDriveOrder]:
         res = await self._session.execute(
-            select(PassengerDriveOrder).where(PassengerDriveOrder.email == email).limit(1)
+            select(PassengerDriveOrder).where(PassengerDriveOrder.email == email).offset(page * size).limit(size)
         )
-        return res.scalar_one_or_none()
+        return [a[0] for a in res]
 
     async def get_by_order_id(self, order_id: int) -> PassengerDriveOrder:
         res = await self._session.execute(

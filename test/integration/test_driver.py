@@ -13,6 +13,7 @@ from component_factory import (
 )
 from model.requests.driver import DriverRequestDrive, DriverAcceptDrive, DriverRejectDrive
 from model.requests.passenger import PassengerDriveOrderRequest, DriveOrderRequestParam
+from model.responses.geocode import Geocode
 from model.responses.knapsack import SuggestedSolution
 from model.responses.passenger import DriveOrderResponse
 from model.responses.passenger import GetDriveResponse
@@ -27,16 +28,20 @@ PASSENGER_AMOUNT = 1
 
 async def add_new_passenger_drive_order(
     test_client: TestClient,
-):
+    source: Geocode = None,
+    dest: Geocode = None
+) -> DriveOrderResponse:
+    source = source or Geocode(latitude=random_latitude(), longitude=random_longitude())
+    dest = dest or Geocode(latitude=random_latitude(), longitude=random_longitude())
     parameter = DriveOrderRequestParam(
-        startLat=random_latitude(),
-        startLon=random_longitude(),
-        destinationLat=random_latitude(),
-        destinationLon=random_longitude(),
+        startLat=source.latitude,
+        startLon=source.longitude,
+        destinationLat=dest.latitude,
+        destinationLon=dest.longitude,
         numberOfPassengers=1,
     )
     order_new_drive_request = PassengerDriveOrderRequest(parameter=parameter)
-    await test_client.post(
+    return await test_client.post(
         url="/passenger/order-drive",
         req_body=order_new_drive_request,
         resp_model=DriveOrderResponse,
@@ -83,19 +88,20 @@ async def test_accept_drive(test_client: TestClient, clear_orders_tables):
     3) send accept drive for one of the seggested drives
     4) assert ok
     """
-    random_order_id = None
-    await add_new_passenger_drive_order(test_client)
-
     request_drive_request = DriverRequestDrive(
         current_lat=random_latitude(),
         current_lon=random_longitude(),
     )
+
+    await add_new_passenger_drive_order(test_client, Geocode(latitude=request_drive_request.current_lat, longitude=request_drive_request.current_lon))
+
     resp = await test_client.post(
         url="/driver/request-drives",
         req_body=request_drive_request,
         resp_model=SuggestedSolution,
     )
 
+    random_order_id = None
     for _id, solution in resp.solutions.items():
         if solution.items:
             random_order_id = _id

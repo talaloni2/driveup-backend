@@ -1,4 +1,6 @@
-from sqlalchemy import Column, Integer, Float, String, Enum, ARRAY
+from datetime import datetime
+
+from sqlalchemy import Column, Integer, Float, String, Enum, ARRAY, DateTime
 from enum import Enum
 
 
@@ -25,3 +27,4 @@ class PassengerDriveOrder(Base):
     drive_id = Column(String, default=None)
     frozen_by = Column(String)  # driver's email
     estimated_cost = Column(Float)
+    time = Column(DateTime)

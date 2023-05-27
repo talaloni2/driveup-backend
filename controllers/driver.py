@@ -5,7 +5,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException
 
 from component_factory import get_passenger_service, get_knapsack_service, get_driver_service, get_time_service
-from controllers.utils import AuthenticatedUser, authenticated_user
+from controllers.utils import AuthenticatedUser, authenticated_user, adjust_timezone
 from mappings.factory_mapping import LIMITS_MAPPING
 from model.driver_drive_order import DriverDriveOrder
 from model.passenger_drive_order import PassengerDriveOrderStatus
@@ -27,8 +27,8 @@ CANDIDATES_AMOUNT = 2
 
 def _orders_to_suggestions(current_drive_orders: list[DriverDriveOrder], time_service: TimeService):
     return SuggestedSolution(
-        time=_adjust_timezone(current_drive_orders[0].time, time_service),
-        expires_at=_adjust_timezone(current_drive_orders[0].expires_at, time_service),
+        time=adjust_timezone(current_drive_orders[0].time, time_service),
+        expires_at=adjust_timezone(current_drive_orders[0].expires_at, time_service),
         solutions={
             k.id: KnapsackSolution(items=k.passenger_orders, algorithm=k.algorithm) for k in current_drive_orders
         },
@@ -68,14 +68,10 @@ async def order_new_drive(
     suggestions = await knapsack_service.suggest_solution(user.email, 4, rides)
     suggestions = get_suggestions_with_total_value_volume(suggestions)
     await driver_service.save_suggestions(user.email, suggestions)
-    suggestions.time = _adjust_timezone(suggestions.time, time_service)
-    suggestions.expires_at = _adjust_timezone(suggestions.expires_at, time_service)
+    suggestions.time = adjust_timezone(suggestions.time, time_service)
+    suggestions.expires_at = adjust_timezone(suggestions.expires_at, time_service)
 
     return suggestions
-
-
-def _adjust_timezone(dt: datetime, time_service: TimeService):
-    return dt.astimezone(time_service.timezone) + dt.astimezone(time_service.timezone).utcoffset()
 
 
 @router.post("/accept-drive")
@@ -209,6 +205,8 @@ async def get_top_candidates(
             await passenger_service.release_order_from_freeze(driver_id, order.id)
             continue
         item = KnapsackItem(id=order.id, volume=order.passengers_amount, value=(-1 * order.distance_from_driver))
+        if item.value == 0:
+            item.value = -1
 
         candidates.append(item)
 

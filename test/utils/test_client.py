@@ -9,7 +9,7 @@ from model.responses.user import UserHandlerResponse
 from model.user_schemas import RequestUser, UserSchema
 
 T = TypeVar("T", bound=BaseModel)
-_RESP = Union[T, bytes]
+_RESP = Union[T, bytes, Response]
 
 
 class TestClient:

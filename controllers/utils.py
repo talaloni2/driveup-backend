@@ -1,8 +1,11 @@
+from datetime import datetime
+
 from fastapi import HTTPException, Depends
 from fastapi.security import OAuth2PasswordBearer
 
 from component_factory import get_user_handler_service
 from model.base_dto import BaseModel
+from service.time_service import TimeService
 from service.user_handler_service import UserHandlerService
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
@@ -21,3 +24,7 @@ async def authenticated_user(
         raise HTTPException(status_code=401, detail="Unauthorized")
 
     return AuthenticatedUser(**{**is_token_valid.result["token"], "token": token})
+
+
+def adjust_timezone(dt: datetime, time_service: TimeService):
+    return dt.astimezone(time_service.timezone) + dt.astimezone(time_service.timezone).utcoffset()
