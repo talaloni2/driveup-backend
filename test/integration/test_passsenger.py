@@ -131,7 +131,7 @@ async def test_order_history(test_client: TestClient, clear_orders_tables: None)
     await _order_drive(test_client)
 
     response = [OrderHistoryNode(**a) for a in (await test_client.get(
-        url=f"/passenger/order-history/",
+        url=f"/passenger/order-history",
     )).json()]
 
     assert len(response) == 2

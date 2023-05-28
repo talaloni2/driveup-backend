@@ -114,7 +114,7 @@ def _to_order_history_node(order_details: PassengerDriveOrder, time_service: Tim
     )
 
 
-@router.get("/order-history/")
+@router.get("/order-history")
 async def order_history(
     page: int = 1,
     size: int = 20,
