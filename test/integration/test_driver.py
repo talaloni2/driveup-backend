@@ -1,26 +1,32 @@
+import asyncio
+import datetime
 import time
+from datetime import timedelta
 from http import HTTPStatus
+from unittest.mock import MagicMock, AsyncMock
 
 import pytest
+from pytest_mock import MockerFixture
 
 from component_factory import (
-    get_passenger_service,
-    create_db_engine,
-    get_database_url,
-    get_config,
-    get_db_session_maker,
-    get_driver_service,
+    get_knapsack_service,
 )
+from controllers import driver
 from model.requests.driver import DriverRequestDrive, DriverAcceptDrive, DriverRejectDrive
+from model.requests.knapsack import KnapsackItem
 from model.requests.passenger import PassengerDriveOrderRequest, DriveOrderRequestParam
+from model.responses.driver import DriveDetails, OrderLocation
 from model.responses.geocode import Geocode
-from model.responses.knapsack import SuggestedSolution
+from model.responses.knapsack import SuggestedSolution, KnapsackSolution
 from model.responses.passenger import DriveOrderResponse
 from model.responses.passenger import GetDriveResponse
-from service.driver_service import DriverService
-from service.passenger_service import PassengerService
+from model.responses.user import UserHandlerResponse
+from model.user_schemas import RequestUser, UserSchema
+from server import app
+from service.knapsack_service import KnapsackService
+from service.time_service import TimeService
 from test.utils.test_client import TestClient
-from test.utils.utils import get_random_email, random_latitude, random_longitude
+from test.utils.utils import random_latitude, random_longitude, get_random_string
 
 EMAIL = "a@b.com"
 PASSENGER_AMOUNT = 1
@@ -242,3 +248,164 @@ async def test_accept_drive_passenger_order_updated(test_client):
 
     assert passenger_order_without_drive.drive_id is None
     assert passenger_order_with_drive.drive_id is not None
+
+
+@pytest.fixture
+def mock_knapsack_service() -> KnapsackService:
+    service_mock = MagicMock()
+    app.dependency_overrides[get_knapsack_service] = lambda: service_mock
+    yield service_mock
+    del app.dependency_overrides[get_knapsack_service]
+
+
+async def _create_new_user(test_client: TestClient, new_username: str) -> UserHandlerResponse:
+    return (
+        await test_client.post(
+            url="/users/",
+            req_body=RequestUser(
+                parameter=UserSchema(
+                    email=new_username,
+                    password="1234",
+                    phone_number=new_username,
+                    full_name=new_username,
+                )
+            ),
+            resp_model=UserHandlerResponse,
+        )
+    )
+
+
+@pytest.mark.asyncio
+async def test_accept_drive_passenger_estimated_time_updated(test_client, mock_knapsack_service, mocker: MockerFixture, unauthenticated):
+    accepted_drive_id = get_random_string()
+    time_service = TimeService()
+    now = time_service.utcnow()
+    mock_knapsack_service.accept_solution = AsyncMock(return_value=True)
+    mock_knapsack_service.reject_solutions = AsyncMock()
+    first_passenger_email = f"test_user_{get_random_string()}@gmail.com"
+    first_passenger = await _create_new_user(test_client, first_passenger_email)
+    first_passenger_token = first_passenger.result["token"]
+    second_passenger_email = f"test_user_{get_random_string()}@gmail.com"
+    second_passenger = await _create_new_user(test_client, second_passenger_email)
+    second_passenger_token = second_passenger.result["token"]
+    user_driver_email = f"test_user_{get_random_string()}@gmail.com"
+    user_driver = await _create_new_user(test_client, user_driver_email)
+    user_driver_token = user_driver.result["token"]
+    first_passenger_order = DriveOrderRequestParam(
+        startLat=random_latitude(),
+        startLon=random_longitude(),
+        destinationLat=random_latitude(),
+        destinationLon=random_longitude(),
+        numberOfPassengers=1,
+    )
+    order_new_drive_request = PassengerDriveOrderRequest(parameter=first_passenger_order)
+    order_drive_resp = await test_client.post(
+        url="/passenger/order-drive",
+        req_body=order_new_drive_request,
+        resp_model=DriveOrderResponse,
+        headers={"Authorization": f"Bearer {first_passenger_token}"}
+    )
+
+    second_passenger_order = DriveOrderRequestParam(
+        startLat=random_latitude(),
+        startLon=random_longitude(),
+        destinationLat=random_latitude(),
+        destinationLon=random_longitude(),
+        numberOfPassengers=1,
+    )
+    order_new_drive_request = PassengerDriveOrderRequest(parameter=second_passenger_order)
+    second_drive_resp = await test_client.post(
+        url="/passenger/order-drive",
+        req_body=order_new_drive_request,
+        resp_model=DriveOrderResponse,
+        headers={"Authorization": f"Bearer {second_passenger_token}"}
+    )
+
+    mock_knapsack_service.suggest_solution = AsyncMock(return_value=SuggestedSolution(time=now, expires_at=now + timedelta(seconds=100), solutions={accepted_drive_id: KnapsackSolution(algorithm="mock", items=[KnapsackItem(id=str(order_drive_resp.order_id), value=1, volume=1), KnapsackItem(id=str(second_drive_resp.order_id), value=1, volume=1)])}))
+    future = AsyncMock()
+    future.return_value = (
+        DriveDetails(
+            time=time_service.now(),
+            id=accepted_drive_id,
+            order_locations=[
+                OrderLocation(
+                    user_email=user_driver_email,
+                    is_driver=True,
+                    is_start_address=True,
+                    address=Geocode(latitude=32.080209, longitude=34.898453),
+                    price=10,
+                ),
+                OrderLocation(
+                    user_email=first_passenger_email,
+                    is_driver=False,
+                    is_start_address=True,
+                    address=Geocode(latitude=first_passenger_order.startLat, longitude=first_passenger_order.startLon),
+                    price=10,
+                ),
+                OrderLocation(
+                    user_email=second_passenger_email,
+                    is_driver=False,
+                    is_start_address=True,
+                    address=Geocode(latitude=second_passenger_order.startLat, longitude=second_passenger_order.startLon),
+                    price=10,
+                ),
+                OrderLocation(
+                    user_email=first_passenger_token,
+                    is_driver=False,
+                    is_start_address=False,
+                    address=Geocode(latitude=first_passenger_order.destinationLat, longitude=first_passenger_order.destinationLon),
+                    price=10,
+                ),
+                OrderLocation(
+                    user_email=second_passenger_token,
+                    is_driver=False,
+                    is_start_address=False,
+                    address=Geocode(latitude=second_passenger_order.destinationLat, longitude=second_passenger_order.destinationLon),
+                    price=10,
+                ),
+            ],
+            total_price=20,
+        )
+    )
+    mocker.patch.object(driver, "order_details", side_effect=future)
+
+    request_drive_request = DriverRequestDrive(
+        current_lat=random_latitude(),
+        current_lon=random_longitude(),
+        limits={},
+    )
+    drive_offers = await test_client.post(
+        url="/driver/request-drives",
+        req_body=request_drive_request,
+        resp_model=SuggestedSolution,
+        headers={"Authorization": f"Bearer {user_driver_token}"}
+    )
+
+    passenger_order_without_drive = await test_client.get(
+        url=f"/passenger/get-drive/{order_drive_resp.order_id}", resp_model=GetDriveResponse,
+        headers={"Authorization": f"Bearer {first_passenger_token}"}
+    )
+
+    assert len(drive_offers.solutions) > 0, "Solutions must not be empty"
+    await test_client.post(
+        url="/driver/accept-drive",
+        req_body=DriverAcceptDrive(order_id=accepted_drive_id),
+        headers={"Authorization": f"Bearer {user_driver_token}"}
+    )
+
+    time.sleep(0.3)
+    first_passenger_order_with_drive = await test_client.get(
+        url=f"/passenger/get-drive/{order_drive_resp.order_id}", resp_model=GetDriveResponse,
+        headers={"Authorization": f"Bearer {first_passenger_token}"}
+    )
+    second_passenger_order_with_drive = await test_client.get(
+        url=f"/passenger/get-drive/{second_drive_resp.order_id}", resp_model=GetDriveResponse,
+        headers={"Authorization": f"Bearer {second_passenger_token}"}
+    )
+
+    assert passenger_order_without_drive.drive_id is None
+    assert first_passenger_order_with_drive.estimated_driver_arrival is not None
+    assert first_passenger_order_with_drive.estimated_driver_arrival is not None
+    assert second_passenger_order_with_drive.estimated_driver_arrival is not None
+    assert first_passenger_order_with_drive.estimated_driver_arrival < second_passenger_order_with_drive.estimated_driver_arrival
+

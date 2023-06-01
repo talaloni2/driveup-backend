@@ -1,20 +1,21 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from http import HTTPStatus
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from component_factory import get_passenger_service, get_knapsack_service, get_driver_service, get_time_service
+from component_factory import get_passenger_service, get_knapsack_service, get_driver_service, get_time_service, \
+    get_directions_service
 from controllers.utils import AuthenticatedUser, authenticated_user, adjust_timezone
 from mappings.factory_mapping import LIMITS_MAPPING
 from model.driver_drive_order import DriverDriveOrder
-from model.passenger_drive_order import PassengerDriveOrderStatus
 from model.requests.driver import DriverRequestDrive, DriverAcceptDrive, DriverRejectDrive, Limit, LimitValues
 from model.requests.knapsack import KnapsackItem
 from model.responses.driver import DriveDetails, OrderLocation
 from model.responses.geocode import Geocode
 from model.responses.knapsack import SuggestedSolution, KnapsackSolution
 from model.responses.success import SuccessResponse
+from service.directions_service import DirectionsService
 from service.driver_service import DriverService
 from service.knapsack_service import KnapsackService
 from service.passenger_service import PassengerService
@@ -82,32 +83,55 @@ async def accept_drive(
     driver_service: DriverService = Depends(get_driver_service),
     user: AuthenticatedUser = Depends(authenticated_user),
     time_service: TimeService = Depends(get_time_service),
+    directions_service: DirectionsService = Depends(get_directions_service),
 ) -> SuccessResponse:
     """
     1) Sets selected order to "IN PROGRESS"
     2) Release frozen orders form DB
     3) Sends accept-solution to knapsack
     """
-    # TODO: along with setting status to active, we need to assign drive id
     now = time_service.utcnow()
+    driver_order = await _get_verified_order(accept_drive_request, driver_service, now, user)
+
+    accept_success = await knapsack_service.accept_solution(
+        user_id=user.email, solution_id=accept_drive_request.order_id
+    )
+    if not accept_success:
+        return SuccessResponse(success=False)
+
+    await _update_frozen_orders(accept_drive_request, driver_order, passenger_service, user)
+
+    await _update_estimated_arrivals(accept_drive_request, directions_service, now, passenger_service, time_service)
+    return SuccessResponse(success=True)
+
+
+async def _update_frozen_orders(accept_drive_request: DriverAcceptDrive, driver_order: DriverDriveOrder, passenger_service: PassengerService, user: AuthenticatedUser):
+    order_ids = [int(order["id"]) for order in driver_order.passenger_orders]
+    for order_id in order_ids:
+        await passenger_service.activate_drive(order_id=order_id, drive_id=accept_drive_request.order_id)
+    await passenger_service.release_unchosen_orders_from_freeze(user.email, order_ids)
+
+
+async def _get_verified_order(accept_drive_request: DriverAcceptDrive, driver_service: DriverService, now: datetime, user: AuthenticatedUser) -> DriverDriveOrder:
     suggestion = await driver_service.get_suggestion(user.email, accept_drive_request.order_id)
     if not suggestion or suggestion.expires_at < now:
         raise HTTPException(
             status_code=HTTPStatus.NOT_ACCEPTABLE, detail={"message": "Suggestion not exists or expired"}
         )
-    accept_success = await knapsack_service.accept_solution(
-        user_id=user.email, solution_id=accept_drive_request.order_id
-    )
+    return suggestion
 
-    order_ids = [int(order["id"]) for order in suggestion.passenger_orders]
-    for order_id in order_ids:
-        await passenger_service.activate_drive(order_id=order_id, drive_id=accept_drive_request.order_id)
-        await passenger_service.set_status_to_drive_order(
-            order_id=order_id, new_status=PassengerDriveOrderStatus.ACTIVE
-        )
 
-    await passenger_service.release_unchosen_orders_from_freeze(user.email, order_ids)
-    return SuccessResponse(success=accept_success)
+async def _update_estimated_arrivals(accept_drive_request: DriverAcceptDrive, directions_service: DirectionsService, now: datetime, passenger_service: PassengerService, time_service: TimeService):
+    route = await order_details(accept_drive_request.order_id, passenger_service, time_service)
+    passenger_locations = [r for r in route.order_locations if r.is_start_address]
+    total_time = 0
+    for i, loc in enumerate(passenger_locations):
+        if i == 0:  # Driver is the first point, no need to estimate arrival time
+            continue
+        total_time += (await directions_service.get_directions(passenger_locations[i - 1].address,
+                                                               passenger_locations[i].address)).duration_seconds
+        await passenger_service.update_estimated_arrival(loc.user_email, accept_drive_request.order_id,
+                                                         now + timedelta(seconds=total_time))
 
 
 @router.post("/reject-drives")

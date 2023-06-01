@@ -16,10 +16,9 @@ def _get_example_directions():
 
 
 class DirectionsService:
-    def __init__(self, directions_api_key: str, http_client: AsyncClient):
-        self._directions_api_url_pattern: str = f"https://api.openrouteservice.org/v2/directions/driving-car"
+    def __init__(self, directions_api_url: str, http_client: AsyncClient):
+        self._directions_api_url: str = directions_api_url
         self._client: AsyncClient = http_client
-        self._api_key: str = directions_api_key
 
     async def get_directions(self, source: Geocode, destination: Geocode) -> DirectionsApiResponse:
         api_resp = await self._call_directions_api(source, destination)
@@ -28,9 +27,8 @@ class DirectionsService:
 
     async def _call_directions_api(self, source: Geocode, destination: Geocode) -> dict:
         resp = await self._client.get(
-            self._directions_api_url_pattern,
+            self._directions_api_url,
             params={
-                "api_key": self._api_key,
                 "start": f"{source.longitude},{source.latitude}",
                 "end": f"{destination.longitude},{destination.latitude}",
             },

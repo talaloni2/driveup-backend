@@ -148,7 +148,26 @@ services:
       SERVER_PORT: 8000
       SUBSCRIPTIONS_HANDLER_BASE_URL: http://subscriptions-backend:8000
       USERS_HANDLER_BASE_URL: http://users-backend:8000
-      DIRECTIONS_API_KEY: MOCK-GET-REAL-ONE
+      DIRECTIONS_API_URL: http://openrouteservice:8080/ors/v2/directions/driving-car
+    networks:
+      - everything
+
+  openrouteservice:
+    image: talaloni19920/openrouteservice:${ORSVERSION}
+    restart: always
+    ports:
+      - '8004:8080'
+    volumes:
+      - ./graphs:/home/ors/ors-core/data/graphs
+      - ./elevation_cache:/home/ors/ors-core/data/elevation_cache
+      - ./logs/ors:/home/ors/ors-core/logs/ors
+      - ./logs/tomcat:/home/ors/tomcat/logs
+      - ./conf:/home/ors/ors-conf
+      #- ./your_osm.pbf:/home/ors/ors-core/data/osm_file.pbf
+    environment:
+      - BUILD_GRAPHS=False  # Forces the container to rebuild the graphs, e.g. when PBF is changed
+      - "JAVA_OPTS=-Djava.awt.headless=true -server -XX:TargetSurvivorRatio=75 -XX:SurvivorRatio=64 -XX:MaxTenuringThreshold=3 -XX:+UseG1GC -XX:+ScavengeBeforeFullGC -XX:ParallelGCThreads=4 -Xms1g -Xmx2g"
+      - "CATALINA_OPTS=-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=9001 -Dcom.sun.management.jmxremote.rmi.port=9001 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Djava.rmi.server.hostname=localhost"
     networks:
       - everything
 
