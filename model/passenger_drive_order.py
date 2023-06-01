@@ -27,4 +27,5 @@ class PassengerDriveOrder(Base):
     drive_id = Column(String, default=None)
     frozen_by = Column(String)  # driver's email
     estimated_cost = Column(Float)
+    estimated_arrival_time = Column(DateTime)
     time = Column(DateTime)

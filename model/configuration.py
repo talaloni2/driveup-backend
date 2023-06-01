@@ -18,7 +18,7 @@ class Config(NamedTuple):
     knapsack_service_url: str
 
     geocoding_api_key: str
-    directions_api_key: str
+    directions_api_url: str
 
 
 class TimeRange(NamedTuple):

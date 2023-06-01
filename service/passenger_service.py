@@ -1,10 +1,11 @@
 import textwrap
+from datetime import datetime
 from typing import Optional
 
 from sqlalchemy import text, select, update, delete, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from model.passenger_drive_order import PassengerDriveOrder, PASSENGER_DRIVE_ORDER_TABLE, PassengerDriveOrderStatus
+from model.passenger_drive_order import PassengerDriveOrder, PassengerDriveOrderStatus
 
 GET_CLOSEST_ORDERS_QUERY = textwrap.dedent(
     f"""
@@ -162,8 +163,17 @@ class PassengerService:
         await self._session.execute(delete(PassengerDriveOrder))
 
     async def activate_drive(self, order_id: int, drive_id: str):
-        await self._session.execute(
-            update(PassengerDriveOrder)
-            .where(PassengerDriveOrder.id == order_id)
-            .values(status=PassengerDriveOrderStatus.ACTIVE, drive_id=drive_id)
-        )
+        async with self._session.begin_nested():
+            await self._session.execute(
+                update(PassengerDriveOrder)
+                .where(PassengerDriveOrder.id == order_id)
+                .values(status=PassengerDriveOrderStatus.ACTIVE, drive_id=drive_id)
+            )
+
+    async def update_estimated_arrival(self, user_email: str, drive_id: str, est_time: datetime):
+        async with self._session.begin_nested():
+            await self._session.execute(
+                update(PassengerDriveOrder)
+                .where(PassengerDriveOrder.email == user_email, PassengerDriveOrder.drive_id == drive_id)
+                .values(estimated_arrival_time=est_time)
+            )

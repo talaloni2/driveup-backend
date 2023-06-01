@@ -34,7 +34,7 @@ def get_config() -> Config:
         users_handler_base_url=os.getenv("USERS_HANDLER_BASE_URL"),
         subscriptions_handler_base_url=os.getenv("SUBSCRIPTIONS_HANDLER_BASE_URL"),
         geocoding_api_key=os.getenv("GEOCODING_API_KEY"),
-        directions_api_key=os.getenv("DIRECTIONS_API_KEY"),
+        directions_api_url=os.getenv("DIRECTIONS_API_URL"),
     )
 
 
@@ -120,7 +120,7 @@ def get_geocoding_service(config: Config = Depends(get_config)):
 
 
 def get_directions_service(config: Config = Depends(get_config)) -> DirectionsService:
-    return DirectionsService(config.directions_api_key, http_client=AsyncClient(base_url=config.knapsack_service_url))
+    return DirectionsService(config.directions_api_url, http_client=AsyncClient(base_url=config.knapsack_service_url))
 
 
 def get_cost_estimation_config() -> CostEstimationConfig:

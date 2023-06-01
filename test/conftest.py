@@ -42,7 +42,7 @@ async def config() -> Config:
         db_pass=original.db_pass,
         knapsack_service_url=original.knapsack_service_url,
         geocoding_api_key=original.geocoding_api_key,
-        directions_api_key="MOCK",
+        directions_api_url="MOCK",
         db_url=None,
         subscriptions_handler_base_url="MOCK",
         users_handler_base_url="MOCK",

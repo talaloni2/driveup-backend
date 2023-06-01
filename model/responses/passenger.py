@@ -17,6 +17,7 @@ class GetDriveResponse(BaseModel):
     destination: Geocode
     estimated_cost: float = 0
     time: datetime
+    estimated_driver_arrival: Optional[datetime] = None
 
 
 class OrderHistoryNode(BaseModel):
