@@ -52,3 +52,9 @@ class DriverService:
 
     async def delete_all_driver_drive_orders(self):
         await self._session.execute(delete(DriverDriveOrder))
+
+    async def get_driver_drive_by_id(self, drive_id):
+        res = await self._session.execute(select(DriverDriveOrder).where(
+                DriverDriveOrder.id == drive_id,
+            ))
+        return res.scalar_one_or_none()

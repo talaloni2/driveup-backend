@@ -64,6 +64,13 @@ class PassengerService:
         )
         return res.scalar_one_or_none()
 
+    async def get_by_drive_id(self, drive_id: str):
+        res = await self._session.execute(
+            select(PassengerDriveOrder)
+            .where(PassengerDriveOrder.drive_id == drive_id)
+        )
+        return res.scalars().all()
+
     async def cancel_order(self, user_id: str, order_id: int) -> bool:
         await self._session.execute(
             delete(PassengerDriveOrder).where(

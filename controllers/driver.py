@@ -153,50 +153,35 @@ async def reject_drive(
 async def order_details(
     drive_id: str,
     passenger_service: PassengerService = Depends(get_passenger_service),
-    time_service: TimeService = Depends(get_time_service),
+    driver_service: DriverService = Depends(get_driver_service),
 ) -> DriveDetails:
-    return DriveDetails(
-        time=time_service.now(),
-        id=drive_id,
-        order_locations=[
-            OrderLocation(
-                user_email="d@d.com",
-                is_driver=True,
-                is_start_address=True,
-                address=Geocode(latitude=32.080209, longitude=34.898453),
-                price=10,
-            ),
-            OrderLocation(
-                user_email="a@a.com",
-                is_driver=False,
-                is_start_address=True,
-                address=Geocode(latitude=32.081118, longitude=34.889338),
-                price=10,
-            ),
-            OrderLocation(
-                user_email="b@b.com",
-                is_driver=False,
-                is_start_address=True,
-                address=Geocode(latitude=32.087327, longitude=34.879775),
-                price=10,
-            ),
-            OrderLocation(
-                user_email="a@a.com",
-                is_driver=False,
-                is_start_address=False,
-                address=Geocode(latitude=32.096715, longitude=34.873519),
-                price=10,
-            ),
-            OrderLocation(
-                user_email="b@b.com",
-                is_driver=False,
-                is_start_address=False,
-                address=Geocode(latitude=32.088084, longitude=34.861633),
-                price=10,
-            ),
-        ],
-        total_price=20,
+
+    passenger_orders = await passenger_service.get_by_drive_id(drive_id=drive_id)
+    driver_drive = await driver_service.get_driver_drive_by_id(drive_id=drive_id)
+
+    order_locations = []
+    driver_order_location = OrderLocation(
+        user_email = driver_drive.driver_id,
+        is_driver=True,
+        is_start_address=True,
+        address=Geocode(latitude=32.080209, longitude=34.898453), #TODO fill it.
+        price=0
     )
+    order_locations.append(driver_order_location)
+
+    current_location = Geocode(latitude=32.080209, longitude=34.898453) #driver_drive.current_location
+    passengers_order_locations, total_price = await build_order_locations_list(current_location=current_location, other_drives=passenger_orders)
+
+    order_locations.extend(passengers_order_locations)
+
+
+    return DriveDetails(
+        time=driver_drive.time,
+        id=drive_id,
+        order_locations=order_locations,
+        total_price=total_price
+    )
+
 
 
 def get_suggestions_with_total_value_volume(suggestions: SuggestedSolution) -> SuggestedSolution:
@@ -235,3 +220,81 @@ async def get_top_candidates(
         candidates.append(item)
 
     return candidates
+
+async def get_next_drive(current_location, other_drives):
+    closest_drive = None
+    min_distance = float('inf')
+
+    for drive in other_drives:
+        distance = calculate_distance(current_location.latitude, current_location.longitude, drive.source_location[0], drive.source_location[1])
+
+        if distance < min_distance:
+            min_distance = distance
+            closest_drive = drive
+
+    return closest_drive
+
+
+def calculate_distance(lat1, lon1, lat2, lon2):
+    # Convert latitude and longitude from degrees to radians
+    lat1 = math.radians(lat1)
+    lon1 = math.radians(lon1)
+    lat2 = math.radians(lat2)
+    lon2 = math.radians(lon2)
+
+    # Haversine formula
+    dlon = lon2 - lon1
+    dlat = lat2 - lat1
+    a = math.sin(dlat / 2) ** 2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2) ** 2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    radius_of_earth = 6371  # Earth's radius in kilometers
+    distance = radius_of_earth * c
+
+    return distance
+
+async def build_order_locations_list(current_location, other_drives):
+    total_price = 0
+    drive_list = []
+    remaining_pickup_drives = other_drives.copy()
+    remaining_drop_drives = other_drives.copy()
+
+    while remaining_pickup_drives:
+        next_drive = await get_next_drive(current_location, remaining_pickup_drives)
+        total_price += next_drive.estimated_cost
+        if next_drive:
+            next_order_location = OrderLocation(
+                user_email=next_drive.id,  # driver_drive.email,
+                is_driver=False,
+                is_start_address=True,
+                address=Geocode(latitude=next_drive.source_location[0], longitude=next_drive.source_location[1] ),  # TODO fill it.
+                price=next_drive.estimated_cost  # TODO fill it.
+            )
+
+            drive_list.append(next_order_location)
+            current_location = Geocode(latitude=next_drive.source_location[0], longitude=next_drive.source_location[1])
+            remaining_pickup_drives.remove(next_drive)
+        else:
+            break
+
+    while remaining_drop_drives:
+        next_drive = await get_next_drive(current_location, remaining_drop_drives)
+        if next_drive:
+            next_order_location = OrderLocation(
+                user_email=next_drive.id,  # driver_drive.email,
+                is_driver=False,
+                is_start_address=False,
+                address=Geocode(latitude=next_drive.dest_location[0], longitude=next_drive.dest_location[1]),
+                price=next_drive.estimated_cost
+            )
+
+            drive_list.append(next_order_location)
+            current_location = next_drive.source_location
+            remaining_drop_drives.remove(next_drive)
+        else:
+            break
+
+    return drive_list, total_price
+
+
+
+

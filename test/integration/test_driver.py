@@ -88,12 +88,7 @@ async def test_post_request_drive_with_no_passenger_orders(test_client: TestClie
 @pytest.mark.asyncio
 async def test_accept_drive(test_client: TestClient, clear_orders_tables):
     # test happy flow
-    """
-    1) send passenger add order request
-    2) send driver order drive request
-    3) send accept drive for one of the seggested drives
-    4) assert ok
-    """
+
     request_drive_request = DriverRequestDrive(
         current_lat=random_latitude(),
         current_lon=random_longitude(),
@@ -142,13 +137,7 @@ async def test_accept_drive_non_existing_order_id(test_client: TestClient, clear
 
 @pytest.mark.asyncio
 async def test_reject_drive(test_client: TestClient, clear_orders_tables):
-    # test happy flow
-    """
-    1) send passenger add order request
-    2) send driver order drive request
-    3) send reject drives
-    4) assert ok
-    """
+
     await add_new_passenger_drive_order(test_client)
 
     request_drive_request = DriverRequestDrive(
@@ -248,6 +237,46 @@ async def test_accept_drive_passenger_order_updated(test_client):
 
     assert passenger_order_without_drive.drive_id is None
     assert passenger_order_with_drive.drive_id is not None
+
+
+@pytest.mark.asyncio
+async def test_get_drive_details(test_client, clear_orders_tables, accept_drive):
+    _id = accept_drive
+    await test_client.get(url=f"/driver/drive-details/{_id}", resp_model=DriveDetails,  assert_status=HTTPStatus.OK)
+
+@pytest.fixture
+async def accept_drive(test_client):
+    request_drive_request = DriverRequestDrive(
+        current_lat=random_latitude(),
+        current_lon=random_longitude(),
+    )
+    await add_new_passenger_drive_order(test_client, Geocode(latitude=request_drive_request.current_lat,
+                                                             longitude=request_drive_request.current_lon))
+    request_drive_request = DriverRequestDrive(
+        current_lat=random_latitude(),
+        current_lon=random_longitude(),
+    )
+    await add_new_passenger_drive_order(test_client, Geocode(latitude=request_drive_request.current_lat,
+                                                             longitude=request_drive_request.current_lon))
+    request_drive_request = DriverRequestDrive(
+        current_lat=random_latitude(),
+        current_lon=random_longitude(),
+    )
+    await add_new_passenger_drive_order(test_client, Geocode(latitude=request_drive_request.current_lat,
+                                                             longitude=request_drive_request.current_lon))
+    resp = await test_client.post(
+        url="/driver/request-drives",
+        req_body=request_drive_request,
+        resp_model=SuggestedSolution,
+    )
+    random_order_id = None
+    for _id, solution in resp.solutions.items():
+        if solution.items:
+            random_order_id = _id
+            break
+    accept_drive_request = DriverAcceptDrive(order_id=random_order_id)
+    await test_client.post(url="/driver/accept-drive", req_body=accept_drive_request, assert_status=HTTPStatus.OK)
+    return _id
 
 
 @pytest.fixture
