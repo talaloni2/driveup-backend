@@ -46,12 +46,7 @@ async def order_new_drive(
     driver_service: DriverService = Depends(get_driver_service),
     time_service: TimeService = Depends(get_time_service),
 ) -> SuggestedSolution:
-    """
-    1) Gets 10 drives from DB
-    2) Converts them to list[KnapsackItem]
-    3) Sends suggest_solution request
-    4) Returns suggestion to FE
-    """
+
     if not force_reject:
         current_drive_orders: list[DriverDriveOrder] = await driver_service.get_suggestions(user.email)
         if current_drive_orders:
@@ -68,7 +63,7 @@ async def order_new_drive(
     await knapsack_service.reject_solutions(user.email)
     suggestions = await knapsack_service.suggest_solution(user.email, 4, rides)
     suggestions = get_suggestions_with_total_value_volume(suggestions)
-    await driver_service.save_suggestions(user.email, suggestions)
+    await driver_service.save_suggestions(user.email, suggestions, [order_request.current_lat, order_request.current_lon])
     suggestions.time = adjust_timezone(suggestions.time, time_service)
     suggestions.expires_at = adjust_timezone(suggestions.expires_at, time_service)
 

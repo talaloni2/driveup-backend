@@ -22,3 +22,4 @@ class DriverDriveOrder(Base):
     passenger_orders = Column(ARRAY(JSON))
     status = Column(String)
     algorithm = Column(String)
+    current_location = Column(ARRAY(Float, dimensions=1))
