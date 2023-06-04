@@ -1,15 +1,19 @@
+from typing import List
+
 from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from model.driver_drive_order import DriverDriveOrder, DriveOrderStatus
 from model.responses.knapsack import SuggestedSolution
+from model.responses.geocode import Geocode
+
 
 
 class DriverService:
     def __init__(self, session: AsyncSession):
         self._session = session
 
-    async def save_suggestions(self, driver_id: str, suggestions: SuggestedSolution):
+    async def save_suggestions(self, driver_id: str, suggestions: SuggestedSolution, current_location: List[float]):
         suggestions = [
             DriverDriveOrder(
                 id=sid,
@@ -20,6 +24,7 @@ class DriverService:
                 status=DriveOrderStatus.PENDING,
                 time=suggestions.time,
                 algorithm=s.algorithm,
+                current_location=current_location
             )
             for sid, s in suggestions.solutions.items()
         ]
@@ -52,3 +57,9 @@ class DriverService:
 
     async def delete_all_driver_drive_orders(self):
         await self._session.execute(delete(DriverDriveOrder))
+
+    async def get_driver_drive_by_id(self, drive_id):
+        res = await self._session.execute(select(DriverDriveOrder).where(
+                DriverDriveOrder.id == drive_id,
+            ))
+        return res.scalar_one_or_none()
