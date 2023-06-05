@@ -10,7 +10,7 @@ from component_factory import get_passenger_service, get_knapsack_service, get_d
 from controllers.utils import AuthenticatedUser, authenticated_user, adjust_timezone
 from mappings.factory_mapping import LIMITS_MAPPING
 from model.driver_drive_order import DriverDriveOrder, DriveOrderStatus
-from model.passenger_drive_order import PassengerDriveOrderStatus
+from model.passenger_drive_order import PassengerDriveOrderStatus, PassengerDriveOrder
 from model.requests.driver import DriverRequestDrive, DriverAcceptDrive, DriverRejectDrive, Limit, LimitValues
 from model.requests.knapsack import KnapsackItem
 from model.responses.driver import DriveDetails, OrderLocation
@@ -163,7 +163,7 @@ async def order_details(
 
 ) -> DriveDetails:
 
-    passenger_orders = await passenger_service.get_by_drive_id(drive_id=drive_id)
+    passenger_orders: list[PassengerDriveOrder] = await passenger_service.get_by_drive_id(drive_id=drive_id)
     driver_drive = await driver_service.get_driver_drive_by_id(drive_id=drive_id)
     if not passenger_orders or not driver_drive:
         raise HTTPException(
@@ -262,7 +262,8 @@ async def get_top_candidates(
 
     return candidates
 
-async def get_next_drive(current_location, other_drives):
+
+async def get_next_drive(current_location: Geocode, other_drives: list[PassengerDriveOrder]) -> PassengerDriveOrder:
     closest_drive = None
     min_distance = float('inf')
 
@@ -293,18 +294,19 @@ def calculate_distance(lat1, lon1, lat2, lon2):
 
     return distance
 
-async def build_order_locations_list(current_location, other_drives):
+
+async def build_order_locations_list(current_location: Geocode, other_drives: list[PassengerDriveOrder]):
     total_price = 0
     drive_list = []
-    remaining_pickup_drives = other_drives.copy()
-    remaining_drop_drives = other_drives.copy()
+    remaining_pickup_drives: list[PassengerDriveOrder] = other_drives.copy()
+    remaining_drop_drives: list[PassengerDriveOrder] = other_drives.copy()
 
     while remaining_pickup_drives:
-        next_drive = await get_next_drive(current_location, remaining_pickup_drives)
-        total_price += next_drive.estimated_cost
+        next_drive: PassengerDriveOrder = await get_next_drive(current_location, remaining_pickup_drives)
         if next_drive:
+            total_price += next_drive.estimated_cost
             next_order_location = OrderLocation(
-                user_email=next_drive.id,
+                user_email=next_drive.email,
                 is_driver=False,
                 is_start_address=True,
                 address=Geocode(latitude=next_drive.source_location[0], longitude=next_drive.source_location[1] ),  # TODO fill it.
@@ -318,10 +320,10 @@ async def build_order_locations_list(current_location, other_drives):
             break
 
     while remaining_drop_drives:
-        next_drive = await get_next_drive(current_location, remaining_drop_drives)
+        next_drive: PassengerDriveOrder = await get_next_drive(current_location, remaining_drop_drives)
         if next_drive:
             next_order_location = OrderLocation(
-                user_email=next_drive.id,  # driver_drive.email,
+                user_email=next_drive.email,  # driver_drive.email,
                 is_driver=False,
                 is_start_address=False,
                 address=Geocode(latitude=next_drive.dest_location[0], longitude=next_drive.dest_location[1]),
