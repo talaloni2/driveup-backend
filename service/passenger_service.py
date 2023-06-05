@@ -71,6 +71,13 @@ class PassengerService:
         )
         return res.scalars().all()
 
+    async def get_by_drive_id_iter(self, drive_id: str) -> list[PassengerDriveOrder]:
+        res = await self._session.execute(
+            select(PassengerDriveOrder)
+            .where(PassengerDriveOrder.drive_id == drive_id)
+        )
+        return [a[0] for a in res]
+
     async def cancel_order(self, user_id: str, order_id: int) -> bool:
         await self._session.execute(
             delete(PassengerDriveOrder).where(
@@ -124,7 +131,7 @@ class PassengerService:
         orders = results.fetchall()
 
         for order in orders:
-            await self.set_status_to_drive_order(order_id=order.id, new_status="FROZEN")
+            await self.set_status_to_drive_order(order_id=order.id, new_status=PassengerDriveOrderStatus.FROZEN)
             await self.set_frozen_by(order_id=order.id, freezer_email=driver_id)
 
         return orders

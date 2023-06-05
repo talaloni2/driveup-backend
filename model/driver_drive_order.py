@@ -9,7 +9,8 @@ DRIVER_DRIVE_ORDER_TABLE = "driver_drive_orders"
 
 class DriveOrderStatus(str, Enum):
     PENDING = "PENDING"
-    ACCEPTED = "ACCEPTED"
+    ACTIVE = "ACTIVE"
+    FINISHED = "FINISHED"
 
 
 class DriverDriveOrder(Base):

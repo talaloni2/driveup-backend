@@ -9,7 +9,8 @@ from component_factory import get_passenger_service, get_knapsack_service, get_d
     get_directions_service
 from controllers.utils import AuthenticatedUser, authenticated_user, adjust_timezone
 from mappings.factory_mapping import LIMITS_MAPPING
-from model.driver_drive_order import DriverDriveOrder
+from model.driver_drive_order import DriverDriveOrder, DriveOrderStatus
+from model.passenger_drive_order import PassengerDriveOrderStatus
 from model.requests.driver import DriverRequestDrive, DriverAcceptDrive, DriverRejectDrive, Limit, LimitValues
 from model.requests.knapsack import KnapsackItem
 from model.responses.driver import DriveDetails, OrderLocation
@@ -92,6 +93,7 @@ async def accept_drive(
         return SuccessResponse(success=False)
 
     await _update_frozen_orders(accept_drive_request, driver_order, passenger_service, user)
+    await driver_service.set_drive_status(driver_order.id, DriveOrderStatus.ACTIVE)
 
     await _update_estimated_arrivals(accept_drive_request, directions_service, now, passenger_service, driver_service)
     return SuccessResponse(success=True)
@@ -179,6 +181,36 @@ async def order_details(
         total_price=total_price
     )
 
+
+@router.post("/finish-drive/{drive_id}")
+async def finish_drive(
+        drive_id: str,
+        passenger_service: PassengerService = Depends(get_passenger_service),
+        driver_service: DriverService = Depends(get_driver_service),
+        user: AuthenticatedUser = Depends(authenticated_user),
+):
+    drive: DriverDriveOrder = await driver_service.get_driver_drive_by_id(drive_id)
+    _validate_drive_for_finish(drive, user)
+
+    await _finish_passenger_orders(drive_id, passenger_service)
+    await driver_service.set_drive_status(drive_id, DriveOrderStatus.FINISHED)
+
+    return SuccessResponse(success=True)
+
+
+async def _finish_passenger_orders(drive_id, passenger_service):
+    passenger_orders = await passenger_service.get_by_drive_id_iter(drive_id=drive_id)
+    for passenger_order in passenger_orders:
+        await passenger_service.set_status_to_drive_order(passenger_order.id, PassengerDriveOrderStatus.FINISHED)
+
+
+def _validate_drive_for_finish(drive, user):
+    if not drive:
+        raise HTTPException(status_code=404, detail="Drive not found")
+    if drive.driver_id != user.email:
+        raise HTTPException(status_code=400, detail="Driver is not assigned to this drive")
+    if drive.status != DriveOrderStatus.ACTIVE:
+        raise HTTPException(status_code=400, detail="Non Active drive cannot be finished")
 
 
 def get_suggestions_with_total_value_volume(suggestions: SuggestedSolution) -> SuggestedSolution:

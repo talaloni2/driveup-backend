@@ -1,17 +1,19 @@
-import asyncio
-import datetime
 import time
 from datetime import timedelta
 from http import HTTPStatus
+from typing import NamedTuple
 from unittest.mock import MagicMock, AsyncMock
 
 import pytest
+from _pytest.outcomes import fail
 from pytest_mock import MockerFixture
 
 from component_factory import (
     get_knapsack_service,
 )
 from controllers import driver
+from controllers.utils import authenticated_user
+from model.passenger_drive_order import PassengerDriveOrderStatus
 from model.requests.driver import DriverRequestDrive, DriverAcceptDrive, DriverRejectDrive
 from model.requests.knapsack import KnapsackItem
 from model.requests.passenger import PassengerDriveOrderRequest, DriveOrderRequestParam
@@ -20,16 +22,22 @@ from model.responses.geocode import Geocode
 from model.responses.knapsack import SuggestedSolution, KnapsackSolution
 from model.responses.passenger import DriveOrderResponse
 from model.responses.passenger import GetDriveResponse
+from model.responses.success import SuccessResponse
 from model.responses.user import UserHandlerResponse
 from model.user_schemas import RequestUser, UserSchema
 from server import app
 from service.knapsack_service import KnapsackService
 from service.time_service import TimeService
 from test.utils.test_client import TestClient
-from test.utils.utils import random_latitude, random_longitude, get_random_string
+from test.utils.utils import random_latitude, random_longitude, get_random_string, get_random_email
 
 EMAIL = "a@b.com"
 PASSENGER_AMOUNT = 1
+
+
+class _AcceptedDrive(NamedTuple):
+    drive_id: str
+    order_ids: list[int]
 
 
 async def add_new_passenger_drive_order(
@@ -240,43 +248,96 @@ async def test_accept_drive_passenger_order_updated(test_client):
 
 
 @pytest.mark.asyncio
-async def test_get_drive_details(test_client, clear_orders_tables, accept_drive):
-    _id = accept_drive
+async def test_get_drive_details(test_client, clear_orders_tables, accept_drive: _AcceptedDrive):
+    _id = accept_drive.drive_id
     await test_client.get(url=f"/driver/drive-details/{_id}", resp_model=DriveDetails,  assert_status=HTTPStatus.OK)
 
+
+@pytest.mark.asyncio
+async def test_finish_drive_sanity(test_client, clear_orders_tables, accept_drive: _AcceptedDrive):
+    _id = accept_drive.drive_id
+    await test_client.post(url=f"/driver/finish-drive/{_id}", resp_model=SuccessResponse, assert_status=HTTPStatus.OK)
+
+    passenger_orders = [
+        await test_client.get(url=f"/passenger/get-drive/{order_id}", resp_model=GetDriveResponse)
+        for order_id in accept_drive.order_ids
+    ]
+
+    assert all(order.status == PassengerDriveOrderStatus.FINISHED for order in passenger_orders)
+
+
+@pytest.mark.asyncio
+async def test_finish_non_accepted_drive(test_client, request_drive: tuple[str, KnapsackSolution]):
+    _id = request_drive[0]
+    await test_client.post(url=f"/driver/finish-drive/{_id}", assert_status=HTTPStatus.BAD_REQUEST)
+
+
+@pytest.mark.asyncio
+async def test_finish_assigned_to_another_drive(test_client, accept_drive: _AcceptedDrive):
+    await _unauthenticate()
+    new_driver = await _create_new_user(test_client, get_random_email())
+    new_driver_token = new_driver.result["token"]
+    _id = accept_drive.drive_id
+    await test_client.post(url=f"/driver/finish-drive/{_id}", headers={"Authorization": f"Bearer {new_driver_token}"}, assert_status=HTTPStatus.BAD_REQUEST)
+
+
+async def _unauthenticate():
+    if authenticated_user in app.dependency_overrides:
+        del app.dependency_overrides[authenticated_user]
+
+
 @pytest.fixture
-async def accept_drive(test_client):
+async def request_drive(test_client, clear_orders_tables) -> tuple[str, KnapsackSolution]:
+    order_ids = []
+    await _add_passenger_drive_order(order_ids, test_client)
+    await _add_passenger_drive_order(order_ids, test_client)
+    await _add_passenger_drive_order(order_ids, test_client)
+
+    resp: SuggestedSolution = await _request_drive(test_client)
+
+    return _get_first_non_empty_order(resp)
+
+
+@pytest.fixture
+async def accept_drive(test_client, request_drive) -> _AcceptedDrive:
+    random_driver_order_id, random_driver_order = request_drive
+    await _perform_accept_drive(random_driver_order_id, test_client)
+    return _AcceptedDrive(drive_id=random_driver_order_id, order_ids=[int(i.id) for i in random_driver_order.items])
+
+
+async def _perform_accept_drive(random_driver_order_id, test_client):
+    accept_drive_request = DriverAcceptDrive(order_id=random_driver_order_id)
+    await test_client.post(url="/driver/accept-drive", req_body=accept_drive_request)
+
+
+def _get_first_non_empty_order(resp) -> tuple[str, KnapsackSolution]:
+    for _id, solution in resp.solutions.items():
+        if solution.items:
+            return _id, solution
+    fail("There should have been a solution with items.")
+
+
+async def _request_drive(test_client) -> SuggestedSolution:
     request_drive_request = DriverRequestDrive(
         current_lat=random_latitude(),
         current_lon=random_longitude(),
     )
-    await add_new_passenger_drive_order(test_client, Geocode(latitude=request_drive_request.current_lat,
-                                                             longitude=request_drive_request.current_lon))
-    request_drive_request = DriverRequestDrive(
-        current_lat=random_latitude(),
-        current_lon=random_longitude(),
-    )
-    await add_new_passenger_drive_order(test_client, Geocode(latitude=request_drive_request.current_lat,
-                                                             longitude=request_drive_request.current_lon))
-    request_drive_request = DriverRequestDrive(
-        current_lat=random_latitude(),
-        current_lon=random_longitude(),
-    )
-    await add_new_passenger_drive_order(test_client, Geocode(latitude=request_drive_request.current_lat,
-                                                             longitude=request_drive_request.current_lon))
     resp = await test_client.post(
         url="/driver/request-drives",
         req_body=request_drive_request,
         resp_model=SuggestedSolution,
     )
-    random_order_id = None
-    for _id, solution in resp.solutions.items():
-        if solution.items:
-            random_order_id = _id
-            break
-    accept_drive_request = DriverAcceptDrive(order_id=random_order_id)
-    await test_client.post(url="/driver/accept-drive", req_body=accept_drive_request, assert_status=HTTPStatus.OK)
-    return _id
+    return resp
+
+
+async def _add_passenger_drive_order(order_ids, test_client):
+    request_drive_request = DriverRequestDrive(
+        current_lat=random_latitude(),
+        current_lon=random_longitude(),
+    )
+    ride_request = await add_new_passenger_drive_order(test_client, Geocode(latitude=request_drive_request.current_lat,
+                                                                            longitude=request_drive_request.current_lon))
+    order_ids.append(ride_request.order_id)
 
 
 @pytest.fixture

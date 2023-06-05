@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import Optional
 
 from model.base_dto import BaseModel
+from model.passenger_drive_order import PassengerDriveOrderStatus
 from model.responses.geocode import Geocode
 
 
@@ -18,6 +19,7 @@ class GetDriveResponse(BaseModel):
     estimated_cost: float = 0
     time: datetime
     estimated_driver_arrival: Optional[datetime] = None
+    status: PassengerDriveOrderStatus
 
 
 class OrderHistoryNode(BaseModel):

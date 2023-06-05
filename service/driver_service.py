@@ -1,6 +1,6 @@
 from typing import List
 
-from sqlalchemy import select, delete
+from sqlalchemy import select, delete, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from model.driver_drive_order import DriverDriveOrder, DriveOrderStatus
@@ -58,8 +58,12 @@ class DriverService:
     async def delete_all_driver_drive_orders(self):
         await self._session.execute(delete(DriverDriveOrder))
 
-    async def get_driver_drive_by_id(self, drive_id):
+    async def get_driver_drive_by_id(self, drive_id) -> DriverDriveOrder:
         res = await self._session.execute(select(DriverDriveOrder).where(
                 DriverDriveOrder.id == drive_id,
             ))
         return res.scalar_one_or_none()
+
+    async def set_drive_status(self, drive_id: str, status: DriveOrderStatus):
+        async with self._session.begin_nested():
+            await self._session.execute(update(DriverDriveOrder).where(DriverDriveOrder.id == drive_id).values(status=status))

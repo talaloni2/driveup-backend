@@ -36,7 +36,8 @@ def _to_get_drive_response(order: PassengerDriveOrder, time_service: TimeService
         destination=Geocode(latitude=order.dest_location[0], longitude=order.dest_location[1]),
         estimated_cost=order.estimated_cost,
         time=adjust_timezone(order.time, time_service),
-        estimated_driver_arrival=adjust_timezone(order.estimated_arrival_time, time_service) if order.estimated_arrival_time else None
+        estimated_driver_arrival=adjust_timezone(order.estimated_arrival_time, time_service) if order.estimated_arrival_time else None,
+        status=order.status,
     )
 
 
