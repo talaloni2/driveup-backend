@@ -1,3 +1,4 @@
+import math
 from datetime import datetime, timedelta
 from http import HTTPStatus
 from typing import Any
@@ -80,11 +81,7 @@ async def accept_drive(
     time_service: TimeService = Depends(get_time_service),
     directions_service: DirectionsService = Depends(get_directions_service),
 ) -> SuccessResponse:
-    """
-    1) Sets selected order to "IN PROGRESS"
-    2) Release frozen orders form DB
-    3) Sends accept-solution to knapsack
-    """
+
     now = time_service.utcnow()
     driver_order = await _get_verified_order(accept_drive_request, driver_service, now, user)
 
@@ -149,10 +146,15 @@ async def order_details(
     drive_id: str,
     passenger_service: PassengerService = Depends(get_passenger_service),
     driver_service: DriverService = Depends(get_driver_service),
+
 ) -> DriveDetails:
 
     passenger_orders = await passenger_service.get_by_drive_id(drive_id=drive_id)
     driver_drive = await driver_service.get_driver_drive_by_id(drive_id=drive_id)
+    if not passenger_orders or not driver_drive:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_ACCEPTABLE, detail={"message": "Drive id not exists"}
+        )
 
     order_locations = []
     driver_order_location = OrderLocation(
