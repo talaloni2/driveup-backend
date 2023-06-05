@@ -260,7 +260,7 @@ async def build_order_locations_list(current_location, other_drives):
         total_price += next_drive.estimated_cost
         if next_drive:
             next_order_location = OrderLocation(
-                user_email=next_drive.id,
+                user_email=next_drive.email,
                 is_driver=False,
                 is_start_address=True,
                 address=Geocode(latitude=next_drive.source_location[0], longitude=next_drive.source_location[1] ),  # TODO fill it.

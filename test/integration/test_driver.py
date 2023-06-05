@@ -240,10 +240,30 @@ async def test_accept_drive_passenger_order_updated(test_client):
 
 
 @pytest.mark.asyncio
-async def test_get_drive_details(test_client, clear_orders_tables, accept_drive):
-    _id = accept_drive
+async def test_get_drive_details(test_client, clear_orders_tables, accept_drive:tuple):
+    _id = accept_drive[0]
     await test_client.get(url=f"/driver/drive-details/{_id}", resp_model=DriveDetails,  assert_status=HTTPStatus.OK)
 
+@pytest.mark.asyncio
+async def test_get_drive_details_non_existing_drive_id(test_client, clear_orders_tables, accept_drive):
+    _id = accept_drive[0]
+    await test_client.get(url=f"/driver/drive-details/{_id+'RaNdOm'}", assert_status=HTTPStatus.NOT_ACCEPTABLE)
+
+# @pytest.mark.asyncio
+# async def test_get_drive_details_total_price(test_client, clear_orders_tables, accept_drive):
+#     _id, solution = accept_drive
+#     details = await test_client.get(url=f"/driver/drive-details/{_id}", resp_model=DriveDetails,  assert_status=HTTPStatus.OK)
+#     assert 1 ==2
+#     ## Assert total price in DriveDetails == sun of solution.drives.estimated_cost
+
+@pytest.mark.asyncio
+async def test_get_drive_details_drivers_first_drive(test_client, clear_orders_tables, accept_drive):
+    _id, solution = accept_drive
+    details =  await test_client.get(url=f"/driver/drive-details/{_id}", resp_model=DriveDetails,  assert_status=HTTPStatus.OK)
+    assert details.order_locations[0].is_driver == True
+    assert details.order_locations[0].price == 0
+
+# TODO unitests for the help funcs
 @pytest.fixture
 async def accept_drive(test_client):
     request_drive_request = DriverRequestDrive(
@@ -276,7 +296,7 @@ async def accept_drive(test_client):
             break
     accept_drive_request = DriverAcceptDrive(order_id=random_order_id)
     await test_client.post(url="/driver/accept-drive", req_body=accept_drive_request, assert_status=HTTPStatus.OK)
-    return _id
+    return _id, resp.solutions[_id]
 
 
 @pytest.fixture
