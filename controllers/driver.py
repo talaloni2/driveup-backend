@@ -93,7 +93,7 @@ async def accept_drive(
 
     await _update_frozen_orders(accept_drive_request, driver_order, passenger_service, user)
 
-    await _update_estimated_arrivals(accept_drive_request, directions_service, now, passenger_service, time_service)
+    await _update_estimated_arrivals(accept_drive_request, directions_service, now, passenger_service, driver_service)
     return SuccessResponse(success=True)
 
 
@@ -113,8 +113,8 @@ async def _get_verified_order(accept_drive_request: DriverAcceptDrive, driver_se
     return suggestion
 
 
-async def _update_estimated_arrivals(accept_drive_request: DriverAcceptDrive, directions_service: DirectionsService, now: datetime, passenger_service: PassengerService, time_service: TimeService):
-    route = await order_details(accept_drive_request.order_id, passenger_service, time_service)
+async def _update_estimated_arrivals(accept_drive_request: DriverAcceptDrive, directions_service: DirectionsService, now: datetime, passenger_service: PassengerService, driver_service: DriverService):
+    route = await order_details(accept_drive_request.order_id, passenger_service, driver_service)
     passenger_locations = [r for r in route.order_locations if r.is_start_address]
     total_time = 0
     for i, loc in enumerate(passenger_locations):
@@ -260,11 +260,11 @@ async def build_order_locations_list(current_location, other_drives):
         total_price += next_drive.estimated_cost
         if next_drive:
             next_order_location = OrderLocation(
-                user_email=next_drive.id,  # driver_drive.email,
+                user_email=next_drive.id,
                 is_driver=False,
                 is_start_address=True,
                 address=Geocode(latitude=next_drive.source_location[0], longitude=next_drive.source_location[1] ),  # TODO fill it.
-                price=next_drive.estimated_cost  # TODO fill it.
+                price=next_drive.estimated_cost
             )
 
             drive_list.append(next_order_location)
