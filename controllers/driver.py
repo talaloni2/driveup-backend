@@ -38,6 +38,16 @@ def _orders_to_suggestions(current_drive_orders: list[DriverDriveOrder], time_se
     )
 
 
+async def _estimate_incomes(passenger_service: PassengerService, suggestion: SuggestedSolution) -> SuggestedSolution:
+    for suggestion_id, knapsack_suggestion in suggestion.solutions.items():
+        total_income = 0
+        for item in knapsack_suggestion.items:
+            order = await passenger_service.get_by_order_id(int(item.id))
+            total_income += order.estimated_cost
+        knapsack_suggestion.total_value = total_income
+    return suggestion
+
+
 @router.post("/request-drives")
 async def order_new_drive(
     order_request: DriverRequestDrive,
@@ -53,7 +63,8 @@ async def order_new_drive(
         current_drive_orders: list[DriverDriveOrder] = await driver_service.get_suggestions(user.email)
         if current_drive_orders:
             suggestions = _orders_to_suggestions(current_drive_orders, time_service)
-            return get_suggestions_with_total_value_volume(suggestions)
+            suggestions = get_suggestions_with_total_value_volume(suggestions)
+            return await _estimate_incomes(passenger_service, suggestions)
 
     rides = await get_top_candidates(
         current_location=[order_request.current_lat, order_request.current_lon],
@@ -68,6 +79,7 @@ async def order_new_drive(
     await driver_service.save_suggestions(user.email, suggestions, [order_request.current_lat, order_request.current_lon])
     suggestions.time = adjust_timezone(suggestions.time, time_service)
     suggestions.expires_at = adjust_timezone(suggestions.expires_at, time_service)
+    suggestions = await _estimate_incomes(passenger_service, suggestions)
 
     return suggestions
 

@@ -72,11 +72,13 @@ async def test_post_request_drive(test_client: TestClient, clear_orders_tables):
         current_lat=random_latitude(),
         current_lon=random_longitude(),
     )
-    await test_client.post(
+    resp = await test_client.post(
         url="/driver/request-drives",
         req_body=request_drive_request,
         resp_model=SuggestedSolution,
     )
+
+    assert all(suggestion.total_value > 0 for suggestion in resp.solutions.values())
 
 
 @pytest.mark.asyncio
