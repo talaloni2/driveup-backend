@@ -1,3 +1,4 @@
+import math
 from datetime import datetime, timedelta
 from http import HTTPStatus
 from typing import Any
@@ -80,11 +81,7 @@ async def accept_drive(
     time_service: TimeService = Depends(get_time_service),
     directions_service: DirectionsService = Depends(get_directions_service),
 ) -> SuccessResponse:
-    """
-    1) Sets selected order to "IN PROGRESS"
-    2) Release frozen orders form DB
-    3) Sends accept-solution to knapsack
-    """
+
     now = time_service.utcnow()
     driver_order = await _get_verified_order(accept_drive_request, driver_service, now, user)
 
@@ -96,7 +93,7 @@ async def accept_drive(
 
     await _update_frozen_orders(accept_drive_request, driver_order, passenger_service, user)
 
-    await _update_estimated_arrivals(accept_drive_request, directions_service, now, passenger_service, time_service)
+    await _update_estimated_arrivals(accept_drive_request, directions_service, now, passenger_service, driver_service)
     return SuccessResponse(success=True)
 
 
@@ -116,8 +113,8 @@ async def _get_verified_order(accept_drive_request: DriverAcceptDrive, driver_se
     return suggestion
 
 
-async def _update_estimated_arrivals(accept_drive_request: DriverAcceptDrive, directions_service: DirectionsService, now: datetime, passenger_service: PassengerService, time_service: TimeService):
-    route = await order_details(accept_drive_request.order_id, passenger_service, time_service)
+async def _update_estimated_arrivals(accept_drive_request: DriverAcceptDrive, directions_service: DirectionsService, now: datetime, passenger_service: PassengerService, driver_service: DriverService):
+    route = await order_details(accept_drive_request.order_id, passenger_service, driver_service)
     passenger_locations = [r for r in route.order_locations if r.is_start_address]
     total_time = 0
     for i, loc in enumerate(passenger_locations):
@@ -149,10 +146,15 @@ async def order_details(
     drive_id: str,
     passenger_service: PassengerService = Depends(get_passenger_service),
     driver_service: DriverService = Depends(get_driver_service),
+
 ) -> DriveDetails:
 
     passenger_orders = await passenger_service.get_by_drive_id(drive_id=drive_id)
     driver_drive = await driver_service.get_driver_drive_by_id(drive_id=drive_id)
+    if not passenger_orders or not driver_drive:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_ACCEPTABLE, detail={"message": "Drive id not exists"}
+        )
 
     order_locations = []
     driver_order_location = OrderLocation(
@@ -258,11 +260,11 @@ async def build_order_locations_list(current_location, other_drives):
         total_price += next_drive.estimated_cost
         if next_drive:
             next_order_location = OrderLocation(
-                user_email=next_drive.id,  # driver_drive.email,
+                user_email=next_drive.id,
                 is_driver=False,
                 is_start_address=True,
                 address=Geocode(latitude=next_drive.source_location[0], longitude=next_drive.source_location[1] ),  # TODO fill it.
-                price=next_drive.estimated_cost  # TODO fill it.
+                price=next_drive.estimated_cost
             )
 
             drive_list.append(next_order_location)
