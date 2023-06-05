@@ -53,6 +53,7 @@ services:
     ports:
       - '8003:8000'
     environment:
+      SUGGESTION_TTL_SECONDS: 360
       DEPLOYMENT_TYPE: router
       RABBITMQ_HOST: rabbit
       RABBITMQ_USER: rabbit
@@ -87,6 +88,7 @@ services:
       - redis
       - knapsack-solver
     environment:
+      SUGGESTION_TTL_SECONDS: 360
       DEPLOYMENT_TYPE: maintainer
       RABBITMQ_HOST: rabbit
       RABBITMQ_USER: rabbit
