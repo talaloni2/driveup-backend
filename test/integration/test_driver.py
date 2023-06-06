@@ -256,6 +256,12 @@ async def test_get_drive_details(test_client, clear_orders_tables, accept_drive:
 
 
 @pytest.mark.asyncio
+async def test_get_drive_details(test_client, clear_orders_tables, request_drive: tuple[str, KnapsackSolution]):
+    _id = request_drive[0]
+    await test_client.get(url=f"/driver/drive-details-preview/{_id}", resp_model=DriveDetails,  assert_status=HTTPStatus.OK)
+
+
+@pytest.mark.asyncio
 async def test_finish_drive_sanity(test_client, clear_orders_tables, accept_drive: _AcceptedDrive):
     _id = accept_drive.drive_id
     await test_client.post(url=f"/driver/finish-drive/{_id}", resp_model=SuccessResponse, assert_status=HTTPStatus.OK)

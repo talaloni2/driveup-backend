@@ -155,6 +155,19 @@ async def reject_drive(
     return SuccessResponse(success=resp)
 
 
+@router.get("/drive-details-preview/{drive_id}")
+async def order_details_preview(
+    drive_id: str,
+    passenger_service: PassengerService = Depends(get_passenger_service),
+    driver_service: DriverService = Depends(get_driver_service),
+):
+    driver_drive = await driver_service.get_driver_drive_by_id(drive_id)
+    passenger_order_ids = [int(passenger_order["id"]) for passenger_order in driver_drive.passenger_orders]
+    passenger_orders: list[PassengerDriveOrder] = await passenger_service.get_by_ids(passenger_order_ids)
+
+    return await _order_details(drive_id, passenger_orders, driver_drive)
+
+
 @router.get("/drive-details/{drive_id}")
 async def order_details(
     drive_id: str,
@@ -165,6 +178,10 @@ async def order_details(
 
     passenger_orders: list[PassengerDriveOrder] = await passenger_service.get_by_drive_id(drive_id=drive_id)
     driver_drive = await driver_service.get_driver_drive_by_id(drive_id=drive_id)
+    return await _order_details(drive_id, passenger_orders, driver_drive)
+
+
+async def _order_details(drive_id: str, passenger_orders: list[PassengerDriveOrder], driver_drive: DriverDriveOrder):
     if not passenger_orders or not driver_drive:
         raise HTTPException(
             status_code=HTTPStatus.NOT_ACCEPTABLE, detail={"message": "Drive id not exists"}
@@ -180,11 +197,10 @@ async def order_details(
     )
     order_locations.append(driver_order_location)
 
-    current_location = Geocode(latitude=32.080209, longitude=34.898453) #driver_drive.current_location
+    current_location = Geocode(latitude=driver_drive.current_location[0], longitude=driver_drive.current_location[1])
     passengers_order_locations, total_price = await build_order_locations_list(current_location=current_location, other_drives=passenger_orders)
 
     order_locations.extend(passengers_order_locations)
-
 
     return DriveDetails(
         time=driver_drive.time,
@@ -192,7 +208,6 @@ async def order_details(
         order_locations=order_locations,
         total_price=total_price
     )
-
 
 @router.post("/finish-drive/{drive_id}")
 async def finish_drive(
