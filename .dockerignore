@@ -1,0 +1,16 @@
+*.pbf
+restart_docker_compose_arm64.sh
+restart_docker_compose_server.sh
+run_docker_compose_arm64.sh
+run_docker_compose_serdirections_response_example.jsonver.sh
+amd64.env
+arm64.env
+init-db
+graphs
+graphs/*
+elevation_cache
+elevation_cache/*
+conf
+conf/*
+venv
+venv/*

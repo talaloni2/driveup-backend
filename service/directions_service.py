@@ -34,6 +34,17 @@ class DirectionsService:
             },
         )
         if resp.status_code != HTTPStatus.OK:
+            try:
+                json_resp = resp.json()
+            except Exception:
+                raise HTTPException(
+                    status_code=HTTPStatus.INTERNAL_SERVER_ERROR,
+                    detail={"message": "Encountered error in directions api"}
+                )
+            if 'error' in json_resp and 'code' in json_resp['error'] and json_resp['error']['code'] == 2010:
+                raise HTTPException(400,
+                                    detail="Your location is not supported. Try ordering a taxi "
+                                           "within the bounds of Israel")
             raise HTTPException(
                 status_code=HTTPStatus.INTERNAL_SERVER_ERROR, detail={"message": "Encountered error in directions api"}
             )
