@@ -27,4 +27,5 @@ async def authenticated_user(
 
 
 def adjust_timezone(dt: datetime, time_service: TimeService):
-    return dt.astimezone(time_service.timezone) + dt.astimezone(time_service.timezone).utcoffset()
+    return dt
+    # return dt.astimezone(time_service.timezone) + dt.astimezone(time_service.timezone).utcoffset()
