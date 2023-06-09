@@ -110,7 +110,7 @@ def get_time_service() -> TimeService:
 
 
 def get_knapsack_service(config: Config = Depends(get_config), time_service: TimeService = Depends(get_time_service)):
-    client = AsyncClient(base_url=config.knapsack_service_url)
+    client = AsyncClient(base_url=config.knapsack_service_url, timeout=70)
     return KnapsackService(client, time_service)
 
 
