@@ -14,6 +14,10 @@ services:
     networks:
       - everything
   rabbit:
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
     image: rabbitmq:3.8.7-management-alpine
     restart: always
     ports:
@@ -33,6 +37,10 @@ services:
       timeout: 10s
       retries: 5
   redis:
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
     image: 'redis'
     restart: always
     ports:
@@ -42,6 +50,10 @@ services:
     networks:
       - everything
   knapsack-router:
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
     container_name: knapsack-api
     image: talaloni19920/driveup-knapsack-engine:latest
     restart: always
@@ -64,6 +76,10 @@ services:
       - everything
 
   knapsack-solver:
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
     image: talaloni19920/driveup-knapsack-engine:latest
     restart: always
     deploy:
@@ -82,6 +98,10 @@ services:
       - everything
 
   knapsack-maintainer:
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
     container_name: knapsack-maintainer
     image: talaloni19920/driveup-knapsack-engine:latest
     restart: always
@@ -100,6 +120,10 @@ services:
       - everything
 
   subscriptions-backend:
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
     image: talaloni19920/driveup-subscription-handler:latest
     restart: always
     depends_on:
@@ -115,6 +139,10 @@ services:
       - everything
 
   users-backend:
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
     image: talaloni19920/driveup-user-handler:latest
     restart: always
     depends_on:
@@ -131,6 +159,11 @@ services:
       - everything
 
   driveup-backend:
+    container_name: driveup
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
     image: talaloni19920/driveup-backend:latest
     restart: always
     depends_on:
@@ -157,6 +190,10 @@ services:
       - everything
 
   openrouteservice:
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
     image: talaloni19920/openrouteservice:${ORSVERSION}
     restart: always
     ports:
