@@ -61,13 +61,13 @@ async def order_new_drive(
 
     if not force_reject:
         current_drive_orders: list[DriverDriveOrder] = await driver_service.get_suggestions(user.email)
-        if current_drive_orders:
+        all_drive_orders_valid = all(d.expires_at > time_service.utcnow() for d in current_drive_orders)
+        if current_drive_orders and all_drive_orders_valid:
             suggestions = _orders_to_suggestions(current_drive_orders, time_service)
             suggestions = get_suggestions_with_total_value_volume(suggestions)
             return await _estimate_incomes(passenger_service, suggestions)
 
-    await driver_service.reject_solutions(user.email)
-    await knapsack_service.reject_solutions(user.email)
+    await reject_drives(knapsack_service, user, driver_service)
     rides = await get_top_candidates(
         current_location=[order_request.current_lat, order_request.current_lon],
         passenger_service=passenger_service,

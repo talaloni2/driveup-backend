@@ -1,3 +1,4 @@
+import datetime
 import time
 from datetime import timedelta
 from http import HTTPStatus
@@ -5,11 +6,13 @@ from typing import NamedTuple
 from unittest.mock import MagicMock, AsyncMock
 
 import pytest
+import pytz
 from _pytest.outcomes import fail
 from pytest_mock import MockerFixture
 
 from component_factory import (
     get_knapsack_service, get_passenger_service, get_database_url, get_db_session_maker, create_db_engine, get_config,
+    get_time_service,
 )
 from controllers import driver
 from controllers.utils import authenticated_user
@@ -240,6 +243,48 @@ async def test_request_drives_suggestion_already_exists(test_client):
     assert first_resp == second_resp
 
 
+@pytest.fixture
+def mock_time_service() -> TimeService:
+    time_service: TimeService = MagicMock()
+    time_service.utcnow = MagicMock(return_value=datetime.datetime.utcnow())
+    # noinspection PyPropertyAccess
+    time_service.timezone = pytz.timezone("Asia/Jerusalem")
+    time_service.now = MagicMock(return_value=datetime.datetime.now(time_service.timezone))
+    app.dependency_overrides[get_time_service] = lambda: time_service
+    yield time_service
+    del app.dependency_overrides[get_time_service]
+
+
+async def test_request_drives_suggestion_previous_drive_expired(test_client, mock_time_service, clear_orders_tables):
+
+    await _add_passenger_drive_order([], test_client)
+
+    request_drive_request = DriverRequestDrive(
+        current_lat=random_latitude(),
+        current_lon=random_longitude(),
+        limits={},
+    )
+    first_resp = await test_client.post(
+        url="/driver/request-drives",
+        req_body=request_drive_request,
+        resp_model=SuggestedSolution,
+    )
+
+    mock_time_service.utcnow = MagicMock(return_value=datetime.datetime.utcnow() + timedelta(days=1))
+    mock_time_service.now = MagicMock(return_value=datetime.datetime.now(mock_time_service.timezone) + timedelta(days=1))
+    await _add_passenger_drive_order([], test_client)
+
+    second_resp = await test_client.post(
+        url="/driver/request-drives?force_reject=false",
+        req_body=request_drive_request,
+        resp_model=SuggestedSolution,
+    )
+
+    assert len(first_resp.solutions) > 0
+    assert len(second_resp.solutions) > 0
+    assert first_resp != second_resp
+
+
 async def test_accept_drive_passenger_order_updated(test_client):
     parameter = DriveOrderRequestParam(
         startLat=random_latitude(),
@@ -410,7 +455,7 @@ async def test_accept_drive_passenger_estimated_time_updated(test_client, mock_k
     time_service = TimeService()
     now = time_service.utcnow()
     mock_knapsack_service.accept_solution = AsyncMock(return_value=True)
-    mock_knapsack_service.reject_solutions = AsyncMock()
+    mock_knapsack_service.reject_solutions = AsyncMock(return_value=True)
     first_passenger_email = f"test_user_{get_random_string()}@gmail.com"
     first_passenger = await _create_new_user(test_client, first_passenger_email)
     first_passenger_token = first_passenger.result["token"]
