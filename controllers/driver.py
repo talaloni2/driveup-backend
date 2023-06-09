@@ -188,10 +188,10 @@ async def _order_details(drive_id: str, passenger_orders: list[PassengerDriveOrd
 
     order_locations = []
     driver_order_location = OrderLocation(
-        user_email = driver_drive.driver_id,
+        user_email=driver_drive.driver_id,
         is_driver=True,
         is_start_address=True,
-        address=Geocode(latitude=32.080209, longitude=34.898453), #TODO fill it.
+        address=Geocode(latitude=driver_drive.current_location[0], longitude=driver_drive.current_location[1]),
         price=0
     )
     order_locations.append(driver_order_location)
@@ -323,7 +323,7 @@ async def build_order_locations_list(current_location: Geocode, other_drives: li
                 user_email=next_drive.email,
                 is_driver=False,
                 is_start_address=True,
-                address=Geocode(latitude=next_drive.source_location[0], longitude=next_drive.source_location[1] ),  # TODO fill it.
+                address=Geocode(latitude=next_drive.source_location[0], longitude=next_drive.source_location[1]),
                 price=next_drive.estimated_cost
             )
 
@@ -345,7 +345,7 @@ async def build_order_locations_list(current_location: Geocode, other_drives: li
             )
 
             drive_list.append(next_order_location)
-            current_location = next_drive.source_location
+            current_location = Geocode(latitude=next_drive.dest_location[0], longitude=next_drive.dest_location[1])
             remaining_drop_drives.remove(next_drive)
         else:
             break

@@ -60,7 +60,7 @@ class PassengerService:
         res = await self._session.execute(
             select(PassengerDriveOrder).where(PassengerDriveOrder.id.in_(order_ids))
         )
-        return res.scalars().all()
+        return [a[0] for a in res]
 
     async def get_by_order_and_user_id(self, user_id: str, order_id: int) -> PassengerDriveOrder:
         res = await self._session.execute(
