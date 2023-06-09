@@ -83,7 +83,7 @@ services:
     image: talaloni19920/driveup-knapsack-engine:latest
     restart: always
     deploy:
-      replicas: 3
+      replicas: 1
     depends_on:
       - rabbit
       - redis
