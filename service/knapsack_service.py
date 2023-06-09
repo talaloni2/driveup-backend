@@ -3,6 +3,7 @@ from datetime import datetime
 from http import HTTPStatus
 from uuid import uuid4
 
+from fastapi import HTTPException
 from httpx import AsyncClient
 
 from logger import logger
@@ -25,11 +26,14 @@ class KnapsackService:
     async def suggest_solution(self, user_id: str, capacity: int, rides: list[KnapsackItem]) -> SuggestedSolution:
         request = KnapsackSolverRequest(items=rides, volume=capacity, knapsack_id=user_id)
         response = await self._client.post("/knapsack-router/solve", json=request.dict())
-        if response.status_code not in (HTTPStatus.OK, HTTPStatus.NO_CONTENT):
+        if response.status_code not in (HTTPStatus.OK, HTTPStatus.NO_CONTENT, HTTPStatus.REQUEST_TIMEOUT):
             logger.error(f"Got unexpected status: {response.status_code} from knapsack backend: {response.content}")
             response.raise_for_status()
         elif response.status_code == HTTPStatus.NO_CONTENT:
             return SuggestedSolution(time=self._time_service.now(), solutions={}, expires_at=self._time_service.now())
+        elif response.status_code == HTTPStatus.GATEWAY_TIMEOUT:
+            raise HTTPException(status_code=HTTPStatus.GATEWAY_TIMEOUT,
+                                detail="Got timeout while calculating best drives. Please try again later")
 
         suggestion = SuggestedSolution(**response.json())
         return suggestion
