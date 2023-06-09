@@ -91,8 +91,8 @@ def get_passenger_service(db_session: AsyncSession = Depends(get_db_session)):
     return PassengerService(db_session)
 
 
-def get_driver_service(db_session: AsyncSession = Depends(get_db_session)):
-    return DriverService(db_session)
+def get_driver_service(db_session: AsyncSession = Depends(get_db_session), passenger_service: PassengerService = Depends(get_passenger_service)):
+    return DriverService(db_session, passenger_service)
 
 
 def get_user_handler_service(config: Config = Depends(get_config)):

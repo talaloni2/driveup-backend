@@ -66,14 +66,16 @@ async def order_new_drive(
             suggestions = get_suggestions_with_total_value_volume(suggestions)
             return await _estimate_incomes(passenger_service, suggestions)
 
+    await driver_service.reject_solutions(user.email)
+    await knapsack_service.reject_solutions(user.email)
     rides = await get_top_candidates(
         current_location=[order_request.current_lat, order_request.current_lon],
         passenger_service=passenger_service,
         limits=order_request.limits,
         driver_id=user.email,
     )
-    await driver_service.reject_solutions(user.email)
-    await knapsack_service.reject_solutions(user.email)
+    for ride in rides:
+        await passenger_service.set_frozen_by(int(ride.id), user.email)
     suggestions = await knapsack_service.suggest_solution(user.email, 4, rides)
     suggestions = get_suggestions_with_total_value_volume(suggestions)
     await driver_service.save_suggestions(user.email, suggestions, [order_request.current_lat, order_request.current_lon])
@@ -141,17 +143,13 @@ async def _update_estimated_arrivals(accept_drive_request: DriverAcceptDrive, di
 
 
 @router.post("/reject-drives")
-async def reject_drive(
-    reject_drives_request: DriverRejectDrive,
+async def reject_drives(
     knapsack_service: KnapsackService = Depends(get_knapsack_service),
-    passenger_service: PassengerService = Depends(get_passenger_service),
+    user: AuthenticatedUser = Depends(authenticated_user),
+    driver_service: DriverService = Depends(get_driver_service),
 ) -> SuccessResponse:
-    """
-    1) Releases frozen drives
-    2) Sends request to knapsack service
-    """
-    await passenger_service.release_unchosen_orders_from_freeze(reject_drives_request.email)
-    resp = await knapsack_service.reject_solutions(user_id=reject_drives_request.email)
+    await driver_service.reject_solutions(user.email)
+    resp = await knapsack_service.reject_solutions(user_id=user.email)
     return SuccessResponse(success=resp)
 
 

@@ -9,11 +9,11 @@ from _pytest.outcomes import fail
 from pytest_mock import MockerFixture
 
 from component_factory import (
-    get_knapsack_service,
+    get_knapsack_service, get_passenger_service, get_database_url, get_db_session_maker, create_db_engine, get_config,
 )
 from controllers import driver
 from controllers.utils import authenticated_user
-from model.passenger_drive_order import PassengerDriveOrderStatus
+from model.passenger_drive_order import PassengerDriveOrderStatus, PassengerDriveOrder
 from model.requests.driver import DriverRequestDrive, DriverAcceptDrive, DriverRejectDrive
 from model.requests.knapsack import KnapsackItem
 from model.requests.passenger import PassengerDriveOrderRequest, DriveOrderRequestParam
@@ -27,6 +27,7 @@ from model.responses.user import UserHandlerResponse
 from model.user_schemas import RequestUser, UserSchema
 from server import app
 from service.knapsack_service import KnapsackService
+from service.passenger_service import PassengerService
 from service.time_service import TimeService
 from test.utils.test_client import TestClient
 from test.utils.utils import random_latitude, random_longitude, get_random_string, get_random_email
@@ -38,6 +39,13 @@ PASSENGER_AMOUNT = 1
 class _AcceptedDrive(NamedTuple):
     drive_id: str
     order_ids: list[int]
+
+
+@pytest.fixture
+async def passenger_service(event_loop) -> PassengerService:
+    async with get_db_session_maker(create_db_engine(get_database_url(get_config())))() as session:
+        async with session.begin():
+            yield get_passenger_service(session)
 
 
 async def add_new_passenger_drive_order(
@@ -62,7 +70,6 @@ async def add_new_passenger_drive_order(
     )
 
 
-@pytest.mark.asyncio
 async def test_post_request_drive(test_client: TestClient, clear_orders_tables):
     # test for happy flow
     await add_new_passenger_drive_order(test_client)
@@ -81,7 +88,6 @@ async def test_post_request_drive(test_client: TestClient, clear_orders_tables):
     assert all(suggestion.total_value > 0 for suggestion in resp.solutions.values())
 
 
-@pytest.mark.asyncio
 async def test_post_request_drive_with_no_passenger_orders(test_client: TestClient, clear_orders_tables):
     request_drive_request = DriverRequestDrive(
         current_lat=random_latitude(),
@@ -95,7 +101,6 @@ async def test_post_request_drive_with_no_passenger_orders(test_client: TestClie
     )
 
 
-@pytest.mark.asyncio
 async def test_accept_drive(test_client: TestClient, clear_orders_tables):
     # test happy flow
 
@@ -123,7 +128,6 @@ async def test_accept_drive(test_client: TestClient, clear_orders_tables):
     await test_client.post(url="/driver/accept-drive", req_body=accept_drive_request, assert_status=HTTPStatus.OK)
 
 
-@pytest.mark.asyncio
 async def test_accept_drive_non_existing_order_id(test_client: TestClient, clear_orders_tables):
     await add_new_passenger_drive_order(test_client)
 
@@ -145,27 +149,61 @@ async def test_accept_drive_non_existing_order_id(test_client: TestClient, clear
     )
 
 
-@pytest.mark.asyncio
-async def test_reject_drive(test_client: TestClient, clear_orders_tables):
+async def test_reject_drive(test_client: TestClient, clear_orders_tables, passenger_service):
 
-    await add_new_passenger_drive_order(test_client)
+    passenger_order: DriveOrderResponse = await add_new_passenger_drive_order(test_client)
 
     request_drive_request = DriverRequestDrive(
         current_lat=random_latitude(),
         current_lon=random_longitude(),
     )
+    resp = await test_client.post(
+        url="/driver/request-drives",
+        req_body=request_drive_request,
+        resp_model=SuggestedSolution,
+    )
+
+    assert (await passenger_service.get_by_order_id(passenger_order.order_id)).status == PassengerDriveOrderStatus.FROZEN
+
+    assert resp.solutions
+
+    resp = await test_client.post(url="/driver/reject-drives", resp_model=SuccessResponse, assert_status=HTTPStatus.OK)
+    assert resp.success
+    assert (await passenger_service.get_by_order_id(passenger_order.order_id)).status == PassengerDriveOrderStatus.NEW
+
+
+async def test_reject_drive_passenger_request_reclaimed(test_client: TestClient, clear_orders_tables, passenger_service):
+
+    passenger_order: DriveOrderResponse = await add_new_passenger_drive_order(test_client)
+
+    request_drive_request = DriverRequestDrive(
+        current_lat=random_latitude(),
+        current_lon=random_longitude(),
+    )
+    resp = await test_client.post(
+        url="/driver/request-drives",
+        req_body=request_drive_request,
+        resp_model=SuggestedSolution,
+    )
+
+    assert (await passenger_service.get_by_order_id(passenger_order.order_id)).status == PassengerDriveOrderStatus.FROZEN
+
+    assert resp.solutions
+
+    resp = await test_client.post(url="/driver/reject-drives", resp_model=SuccessResponse, assert_status=HTTPStatus.OK)
+    assert resp.success
+    assert (await passenger_service.get_by_order_id(passenger_order.order_id)).status == PassengerDriveOrderStatus.NEW
+
     await test_client.post(
         url="/driver/request-drives",
         req_body=request_drive_request,
         resp_model=SuggestedSolution,
     )
 
-    reject_drive_request = DriverRejectDrive(email=EMAIL)
+    assert (await passenger_service.get_by_order_id(
+        passenger_order.order_id)).status == PassengerDriveOrderStatus.FROZEN
 
-    await test_client.post(url="/driver/reject-drives", req_body=reject_drive_request, assert_status=HTTPStatus.OK)
 
-
-@pytest.mark.asyncio
 async def test_request_drives_suggestion_already_exists(test_client):
     parameter = DriveOrderRequestParam(
         startLat=random_latitude(),
@@ -202,7 +240,6 @@ async def test_request_drives_suggestion_already_exists(test_client):
     assert first_resp == second_resp
 
 
-@pytest.mark.asyncio
 async def test_accept_drive_passenger_order_updated(test_client):
     parameter = DriveOrderRequestParam(
         startLat=random_latitude(),
@@ -249,19 +286,16 @@ async def test_accept_drive_passenger_order_updated(test_client):
     assert passenger_order_with_drive.drive_id is not None
 
 
-@pytest.mark.asyncio
 async def test_get_drive_details(test_client, clear_orders_tables, accept_drive: _AcceptedDrive):
     _id = accept_drive.drive_id
     await test_client.get(url=f"/driver/drive-details/{_id}", resp_model=DriveDetails,  assert_status=HTTPStatus.OK)
 
 
-@pytest.mark.asyncio
 async def test_get_drive_details(test_client, clear_orders_tables, request_drive: tuple[str, KnapsackSolution]):
     _id = request_drive[0]
     await test_client.get(url=f"/driver/drive-details-preview/{_id}", resp_model=DriveDetails,  assert_status=HTTPStatus.OK)
 
 
-@pytest.mark.asyncio
 async def test_finish_drive_sanity(test_client, clear_orders_tables, accept_drive: _AcceptedDrive):
     _id = accept_drive.drive_id
     await test_client.post(url=f"/driver/finish-drive/{_id}", resp_model=SuccessResponse, assert_status=HTTPStatus.OK)
@@ -274,13 +308,11 @@ async def test_finish_drive_sanity(test_client, clear_orders_tables, accept_driv
     assert all(order.status == PassengerDriveOrderStatus.FINISHED for order in passenger_orders)
 
 
-@pytest.mark.asyncio
 async def test_finish_non_accepted_drive(test_client, request_drive: tuple[str, KnapsackSolution]):
     _id = request_drive[0]
     await test_client.post(url=f"/driver/finish-drive/{_id}", assert_status=HTTPStatus.BAD_REQUEST)
 
 
-@pytest.mark.asyncio
 async def test_finish_assigned_to_another_drive(test_client, accept_drive: _AcceptedDrive):
     await _unauthenticate()
     new_driver = await _create_new_user(test_client, get_random_email())
@@ -373,7 +405,6 @@ async def _create_new_user(test_client: TestClient, new_username: str) -> UserHa
     )
 
 
-@pytest.mark.asyncio
 async def test_accept_drive_passenger_estimated_time_updated(test_client, mock_knapsack_service, mocker: MockerFixture, unauthenticated):
     accepted_drive_id = get_random_string()
     time_service = TimeService()

@@ -114,11 +114,12 @@ class PassengerService:
         )
 
     async def set_frozen_by(self, order_id: int, freezer_email: str = None):
-        if freezer_email:
-            # async with self._session.begin():
-            await self._session.execute(
-                update(PassengerDriveOrder).where((PassengerDriveOrder.id == order_id)).values(frozen_by=freezer_email)
-            )
+        async with self._session.begin_nested():
+            if freezer_email:
+                # async with self._session.begin():
+                await self._session.execute(
+                    update(PassengerDriveOrder).where((PassengerDriveOrder.id == order_id)).values(frozen_by=freezer_email)
+                )
 
     async def delete(self, drive: PassengerDriveOrder) -> None:
         # async with self._session.begin():
@@ -156,7 +157,6 @@ class PassengerService:
 
     async def release_unchosen_orders_from_freeze(self, email, chosen_order_ids: Optional[list[int]] = None):
         if chosen_order_ids:
-            # async with self._session.begin():
             await self._session.execute(
                 update(PassengerDriveOrder)
                 .where(
