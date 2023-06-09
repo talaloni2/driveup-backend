@@ -51,7 +51,7 @@ async def _estimate_incomes(passenger_service: PassengerService, suggestion: Sug
 @router.post("/request-drives")
 async def order_new_drive(
     order_request: DriverRequestDrive,
-    force_reject: bool = True,
+    force_reject: bool = False,
     knapsack_service: KnapsackService = Depends(get_knapsack_service),
     user: AuthenticatedUser = Depends(authenticated_user),
     passenger_service: PassengerService = Depends(get_passenger_service),
