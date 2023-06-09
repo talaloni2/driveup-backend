@@ -77,7 +77,7 @@ services:
       RABBITMQ_USER: rabbit
       RABBITMQ_PASSWORD: rabbit
       REDIS_HOST: redis
-      GENETIC_HEAVY_GENERATIONS: 30
+      GENETIC_HEAVY_GENERATIONS: 16
     networks:
       - everything
 
