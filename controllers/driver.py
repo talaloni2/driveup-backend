@@ -110,6 +110,7 @@ async def accept_drive(
     await driver_service.set_drive_status(driver_order.id, DriveOrderStatus.ACTIVE)
 
     await _update_estimated_arrivals(accept_drive_request, directions_service, now, passenger_service, driver_service)
+    await reject_drives(knapsack_service, user, driver_service)
     return SuccessResponse(success=True)
 
 

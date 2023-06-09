@@ -64,9 +64,10 @@ services:
       - everything
 
   knapsack-solver:
-    container_name: knapsack-solver
     image: talaloni19920/driveup-knapsack-engine:latest
     restart: always
+    deploy:
+      replicas: 3
     depends_on:
       - rabbit
       - redis
@@ -76,6 +77,7 @@ services:
       RABBITMQ_USER: rabbit
       RABBITMQ_PASSWORD: rabbit
       REDIS_HOST: redis
+      GENETIC_HEAVY_GENERATIONS: 30
     networks:
       - everything
 
