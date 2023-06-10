@@ -45,8 +45,9 @@ class DirectionsService:
                 )
             if 'error' in json_resp and 'code' in json_resp['error'] and json_resp['error']['code'] == 2010:
                 raise HTTPException(400,
-                                    detail="Your location is not supported. Try ordering a taxi "
-                                           "within the bounds of Israel")
+                                    detail="Your location is not supported. "
+                                           "Please make sure your location is near a car-supporing road "
+                                           "and within the bounds of Israel")
             raise HTTPException(
                 status_code=HTTPStatus.INTERNAL_SERVER_ERROR, detail={"message": "Encountered error in directions api"}
             )

@@ -17,7 +17,6 @@ from model.responses.geocode import Geocode
 from model.responses.passenger import DriveOrderResponse, GetDriveResponse, OrderHistoryNode
 from model.responses.success import SuccessResponse
 from service.cost_estimation_service import CostEstimationService
-from service.currency_conversion_service import nis_to_usd
 from service.directions_service import DirectionsService
 from service.passenger_service import PassengerService
 from service.time_service import TimeService
@@ -61,7 +60,7 @@ async def _estimate_cost(cost_estimation_service, directions_service, order_requ
         Geocode(latitude=order_request.parameter.startLat, longitude=order_request.parameter.startLon),
         Geocode(latitude=order_request.parameter.destinationLat, longitude=order_request.parameter.destinationLon),
     )
-    cost_estimation = nis_to_usd(cost_estimation_service.estimate_cost(time_service.now(), directions))
+    cost_estimation = cost_estimation_service.estimate_cost(time_service.now(), directions)
     return cost_estimation
 
 

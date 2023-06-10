@@ -279,8 +279,9 @@ async def get_top_candidates(
         if not is_order_acceptable(order=order, limits=limits):
             await passenger_service.release_order_from_freeze(driver_id, order.id)
             continue
-        profit = max(await _estimate_driver_profit(cost_estimation_service, current_location_as_geo, directions_service,
-                                                   order, time_service), 1)
+        profit = await _estimate_driver_profit(cost_estimation_service, current_location_as_geo, directions_service,
+                                               order, time_service)
+        profit = max(profit, 1)
         item = KnapsackItem(id=str(order.id), volume=order.passengers_amount, value=profit)
         candidates.append(item)
 

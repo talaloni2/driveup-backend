@@ -2,6 +2,7 @@ from datetime import datetime
 
 from model.configuration import CostEstimationConfig, Tariff
 from model.responses.directions_api import DirectionsApiResponse
+from service.currency_conversion_service import nis_to_usd
 
 
 class CostEstimationService:
@@ -9,7 +10,7 @@ class CostEstimationService:
         self._cost_estimation_config = cost_estimation_config or CostEstimationConfig()
 
     def estimate_cost(self, reservation_date: datetime, directions: DirectionsApiResponse):
-        return round(self._get_raw_estimation(reservation_date, directions) * self._get_discount_factor(), 2)
+        return round(nis_to_usd(self._get_raw_estimation(reservation_date, directions) * self._get_discount_factor()), 2)
 
     def _get_raw_estimation(self, reservation_date: datetime, directions: DirectionsApiResponse):
         for tariff_class, tariff_times in self._cost_estimation_config.tariff_times_mapping.items():
