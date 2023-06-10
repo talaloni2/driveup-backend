@@ -6,6 +6,7 @@ from sqlalchemy import text, select, update, delete, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from model.passenger_drive_order import PassengerDriveOrder, PassengerDriveOrderStatus
+from model.top_candidate import TopCandidate
 
 GET_CLOSEST_ORDERS_QUERY = textwrap.dedent(
     f"""
@@ -19,7 +20,7 @@ SELECT
         POWER(SIN((RADIANS(dest_location[1]) - RADIANS(source_location[1])) / 2), 2) +
         COS(RADIANS(source_location[1])) * COS(RADIANS(dest_location[1])) *
         POWER(SIN((RADIANS(dest_location[2]) - RADIANS(source_location[2] )) / 2), 2)
-    )) AS distance, id, passengers_amount
+    )) AS distance, id, passengers_amount, source_location, estimated_cost
 FROM
     passenger_drive_orders
 WHERE
@@ -125,7 +126,7 @@ class PassengerService:
         # async with self._session.begin():
         await self._session.delete(drive)
 
-    async def get_top_order_candidates(self, candidates_amount, current_location: list[float], driver_id: str):
+    async def get_top_order_candidates(self, candidates_amount, current_location: list[float], driver_id: str) -> list[TopCandidate]:
         """
         1) Get x orders
         2) Set them frozen

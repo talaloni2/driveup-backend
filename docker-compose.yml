@@ -14,6 +14,7 @@ services:
     networks:
       - everything
   rabbit:
+    container_name: durabbit
     logging:
       options:
         max-size: "10m"
@@ -37,6 +38,7 @@ services:
       timeout: 10s
       retries: 5
   redis:
+    container_name: duredis
     logging:
       options:
         max-size: "10m"
@@ -76,6 +78,7 @@ services:
       - everything
 
   knapsack-solver:
+    container_name: solver
     logging:
       options:
         max-size: "10m"

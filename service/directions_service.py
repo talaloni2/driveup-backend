@@ -23,6 +23,8 @@ class DirectionsService:
     async def get_directions(self, source: Geocode, destination: Geocode) -> DirectionsApiResponse:
         api_resp = await self._call_directions_api(source, destination)
         summary = api_resp["features"][0]["properties"]["summary"]
+        if not summary:
+            return DirectionsApiResponse(distance_meters=0, duration_seconds=0)
         return DirectionsApiResponse(distance_meters=summary["distance"], duration_seconds=summary["duration"])
 
     async def _call_directions_api(self, source: Geocode, destination: Geocode) -> dict:

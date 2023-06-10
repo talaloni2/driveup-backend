@@ -6,17 +6,19 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException
 
 from component_factory import get_passenger_service, get_knapsack_service, get_driver_service, get_time_service, \
-    get_directions_service
+    get_directions_service, get_cost_estimation_service
 from controllers.utils import AuthenticatedUser, authenticated_user, adjust_timezone
 from mappings.factory_mapping import LIMITS_MAPPING
 from model.driver_drive_order import DriverDriveOrder, DriveOrderStatus
 from model.passenger_drive_order import PassengerDriveOrderStatus, PassengerDriveOrder
-from model.requests.driver import DriverRequestDrive, DriverAcceptDrive, DriverRejectDrive, Limit, LimitValues
+from model.requests.driver import DriverRequestDrive, DriverAcceptDrive, Limit, LimitValues
 from model.requests.knapsack import KnapsackItem
 from model.responses.driver import DriveDetails, OrderLocation
 from model.responses.geocode import Geocode
 from model.responses.knapsack import SuggestedSolution, KnapsackSolution
 from model.responses.success import SuccessResponse
+from model.top_candidate import TopCandidate
+from service.cost_estimation_service import CostEstimationService
 from service.directions_service import DirectionsService
 from service.driver_service import DriverService
 from service.knapsack_service import KnapsackService
@@ -57,6 +59,8 @@ async def order_new_drive(
     passenger_service: PassengerService = Depends(get_passenger_service),
     driver_service: DriverService = Depends(get_driver_service),
     time_service: TimeService = Depends(get_time_service),
+    directions_service: DirectionsService = Depends(get_directions_service),
+    cost_estimation_service: CostEstimationService = Depends(get_cost_estimation_service),
 ) -> SuggestedSolution:
 
     if not force_reject:
@@ -73,6 +77,9 @@ async def order_new_drive(
         passenger_service=passenger_service,
         limits=order_request.limits,
         driver_id=user.email,
+        directions_service=directions_service,
+        cost_estimation_service=cost_estimation_service,
+        time_service=time_service,
     )
     for ride in rides:
         await passenger_service.set_frozen_by(int(ride.id), user.email)
@@ -259,22 +266,33 @@ async def get_top_candidates(
     passenger_service: PassengerService,
     limits: dict[Limit, LimitValues],
     driver_id: str,
+    directions_service: DirectionsService,
+    cost_estimation_service: CostEstimationService,
+    time_service: TimeService,
 ) -> list[KnapsackItem]:
     candidates = []
     orders = await passenger_service.get_top_order_candidates(
         candidates_amount=CANDIDATES_AMOUNT, current_location=current_location, driver_id=driver_id
     )
+    current_location_as_geo: Geocode = Geocode(latitude=current_location[0], longitude=current_location[1])
     for order in orders:
         if not is_order_acceptable(order=order, limits=limits):
             await passenger_service.release_order_from_freeze(driver_id, order.id)
             continue
-        item = KnapsackItem(id=order.id, volume=order.passengers_amount, value=(-1 * order.distance_from_driver))
-        if item.value == 0:
-            item.value = -1
-
+        profit = max(await _estimate_driver_profit(cost_estimation_service, current_location_as_geo, directions_service,
+                                                   order, time_service), 1)
+        item = KnapsackItem(id=str(order.id), volume=order.passengers_amount, value=profit)
         candidates.append(item)
 
     return candidates
+
+
+async def _estimate_driver_profit(cost_estimation_service: CostEstimationService, driver_location: Geocode, directions_service: DirectionsService, order: TopCandidate,
+                                  time_service):
+    passenger_start_point: Geocode = Geocode(latitude=order.source_location[0], longitude=order.source_location[1])
+    directions = await directions_service.get_directions(driver_location, passenger_start_point)
+    arrival_cost = cost_estimation_service.estimate_cost(time_service.now(), directions)
+    return order.estimated_cost - arrival_cost
 
 
 async def get_next_drive(current_location: Geocode, other_drives: list[PassengerDriveOrder]) -> PassengerDriveOrder:

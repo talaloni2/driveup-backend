@@ -58,17 +58,7 @@ def event_loop() -> Generator:
 
 
 @pytest.fixture
-def mock_directions_api():
-    directions_response = DirectionsApiResponse(distance_meters=4 * 1000, duration_seconds=10 * 60)
-    directions_service_mock: DirectionsService = MagicMock()
-    directions_service_mock.get_directions = AsyncMock(return_value=directions_response)
-    app.dependency_overrides[get_directions_service] = lambda: directions_service_mock
-    yield
-    del app.dependency_overrides[get_directions_service]
-
-
-@pytest.fixture
-async def test_client(event_loop, mock_directions_api) -> TestClient:
+async def test_client(event_loop) -> TestClient:
     email = get_random_email()
     app.dependency_overrides[authenticated_user] = lambda: AuthenticatedUser(email=email, token="MOCK")
     async with AsyncClient(app=app, base_url="http://test") as client:

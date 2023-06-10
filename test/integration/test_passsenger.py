@@ -97,8 +97,8 @@ async def test_cancel_drive_fail(test_client: TestClient, clear_orders_tables: N
     )
 
     request_drive_request = DriverRequestDrive(
-        current_lat=random_latitude(parameter.startLat, 0.00001),
-        current_lon=random_longitude(parameter.startLon, 0.00001),
+        current_lat=random_latitude(parameter.startLat, parameter.startLat + 0.00001),
+        current_lon=random_longitude(parameter.startLon, parameter.startLon + 0.00001),
     )
 
     await test_client.post(
