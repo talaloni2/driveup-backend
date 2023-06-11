@@ -57,12 +57,31 @@ def event_loop() -> Generator:
     loop.close()
 
 
+async def _create_new_user_get_token(test_client: TestClient, new_username: str) -> tuple[str, str]:
+    user = (
+        await test_client.post(
+            url="/users/",
+            req_body=RequestUser(
+                parameter=UserSchema(
+                    email=new_username,
+                    password="1234",
+                    phone_number=new_username,
+                    full_name=new_username,
+                )
+            ),
+            resp_model=UserHandlerResponse,
+        )
+    )
+    return user.result["token"], new_username
+
+
 @pytest.fixture
 async def test_client(event_loop) -> TestClient:
-    email = get_random_email()
-    app.dependency_overrides[authenticated_user] = lambda: AuthenticatedUser(email=email, token="MOCK")
     async with AsyncClient(app=app, base_url="http://test") as client:
-        yield TestClient(client)
+        tc = TestClient(client)
+        new_user = await _create_new_user_get_token(tc, get_random_email())
+        app.dependency_overrides[authenticated_user] = lambda: AuthenticatedUser(email=new_user[1], token=new_user[0])
+        yield tc
 
     if authenticated_user in app.dependency_overrides:
         del app.dependency_overrides[authenticated_user]

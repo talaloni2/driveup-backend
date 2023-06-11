@@ -2,7 +2,7 @@ import datetime
 import time
 from datetime import timedelta
 from http import HTTPStatus
-from typing import NamedTuple
+from typing import NamedTuple, Optional
 from unittest.mock import MagicMock, AsyncMock
 
 import pytest
@@ -16,8 +16,8 @@ from component_factory import (
 )
 from controllers import driver
 from controllers.utils import authenticated_user
-from model.passenger_drive_order import PassengerDriveOrderStatus, PassengerDriveOrder
-from model.requests.driver import DriverRequestDrive, DriverAcceptDrive, DriverRejectDrive
+from model.passenger_drive_order import PassengerDriveOrderStatus
+from model.requests.driver import DriverRequestDrive, DriverAcceptDrive
 from model.requests.knapsack import KnapsackItem
 from model.requests.passenger import PassengerDriveOrderRequest, DriveOrderRequestParam
 from model.responses.driver import DriveDetails, OrderLocation
@@ -54,7 +54,8 @@ async def passenger_service(event_loop) -> PassengerService:
 async def add_new_passenger_drive_order(
     test_client: TestClient,
     source: Geocode = None,
-    dest: Geocode = None
+    dest: Geocode = None,
+    user_token: Optional[str] = None
 ) -> DriveOrderResponse:
     source = source or Geocode(latitude=random_latitude(), longitude=random_longitude())
     dest = dest or Geocode(latitude=random_latitude(), longitude=random_longitude())
@@ -70,6 +71,7 @@ async def add_new_passenger_drive_order(
         url="/passenger/order-drive",
         req_body=order_new_drive_request,
         resp_model=DriveOrderResponse,
+        headers={"Authorization": f"Bearer {user_token}"}
     )
 
 
@@ -106,7 +108,6 @@ async def test_post_request_drive_with_no_passenger_orders(test_client: TestClie
 
 async def test_accept_drive(test_client: TestClient, clear_orders_tables):
     # test happy flow
-
     request_drive_request = DriverRequestDrive(
         current_lat=random_latitude(),
         current_lon=random_longitude(),
@@ -285,7 +286,8 @@ async def test_request_drives_suggestion_previous_drive_expired(test_client, moc
     assert first_resp != second_resp
 
 
-async def test_accept_drive_passenger_order_updated(test_client):
+async def test_accept_drive_passenger_order_updated(test_client, unauthenticated):
+    user_token = await _create_new_user_get_token(test_client, get_random_email())
     parameter = DriveOrderRequestParam(
         startLat=random_latitude(),
         startLon=random_longitude(),
@@ -298,6 +300,7 @@ async def test_accept_drive_passenger_order_updated(test_client):
         url="/passenger/order-drive",
         req_body=order_new_drive_request,
         resp_model=DriveOrderResponse,
+        headers={"Authorization": f"Bearer {user_token}"}
     )
 
     request_drive_request = DriverRequestDrive(
@@ -309,10 +312,12 @@ async def test_accept_drive_passenger_order_updated(test_client):
         url="/driver/request-drives",
         req_body=request_drive_request,
         resp_model=SuggestedSolution,
+        headers={"Authorization": f"Bearer {user_token}"}
     )
 
     passenger_order_without_drive = await test_client.get(
-        url=f"/passenger/get-drive/{order_drive_resp.order_id}", resp_model=GetDriveResponse
+        url=f"/passenger/get-drive/{order_drive_resp.order_id}", resp_model=GetDriveResponse,
+        headers={"Authorization": f"Bearer {user_token}"}
     )
 
     assert len(drive_offers.solutions) > 0, "Solutions must not be empty"
@@ -320,11 +325,13 @@ async def test_accept_drive_passenger_order_updated(test_client):
     await test_client.post(
         url="/driver/accept-drive",
         req_body=DriverAcceptDrive(order_id=accepted_drive_id),
+        headers={"Authorization": f"Bearer {user_token}"}
     )
 
     time.sleep(0.3)
     passenger_order_with_drive = await test_client.get(
-        url=f"/passenger/get-drive/{order_drive_resp.order_id}", resp_model=GetDriveResponse
+        url=f"/passenger/get-drive/{order_drive_resp.order_id}", resp_model=GetDriveResponse,
+        headers={"Authorization": f"Bearer {user_token}"}
     )
 
     assert passenger_order_without_drive.drive_id is None
@@ -336,7 +343,7 @@ async def test_get_drive_details(test_client, clear_orders_tables, accept_drive:
     await test_client.get(url=f"/driver/drive-details/{_id}", resp_model=DriveDetails,  assert_status=HTTPStatus.OK)
 
 
-async def test_get_drive_details(test_client, clear_orders_tables, request_drive: tuple[str, KnapsackSolution]):
+async def test_get_drive_details_preview(test_client, clear_orders_tables, request_drive: tuple[str, KnapsackSolution]):
     _id = request_drive[0]
     await test_client.get(url=f"/driver/drive-details-preview/{_id}", resp_model=DriveDetails,  assert_status=HTTPStatus.OK)
 
@@ -448,6 +455,23 @@ async def _create_new_user(test_client: TestClient, new_username: str) -> UserHa
             resp_model=UserHandlerResponse,
         )
     )
+
+
+async def _create_new_user_get_token(test_client: TestClient, new_username: str) -> str:
+    return (
+        await test_client.post(
+            url="/users/",
+            req_body=RequestUser(
+                parameter=UserSchema(
+                    email=new_username,
+                    password="1234",
+                    phone_number=new_username,
+                    full_name=new_username,
+                )
+            ),
+            resp_model=UserHandlerResponse,
+        )
+    ).result["token"]
 
 
 async def test_accept_drive_passenger_estimated_time_updated(test_client, mock_knapsack_service, mocker: MockerFixture, unauthenticated):

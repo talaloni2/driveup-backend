@@ -6,6 +6,7 @@ import pytest
 from model.configuration import CostEstimationConfig
 from model.responses.directions_api import DirectionsApiResponse
 from service.cost_estimation_service import CostEstimationService
+from service.currency_conversion_service import nis_to_usd
 
 
 @pytest.mark.parametrize(
@@ -59,4 +60,4 @@ def test_cost_estimation_service(
     estimation = CostEstimationService(CostEstimationConfig(discount_percent=discount_percent)).estimate_cost(
         dt, DirectionsApiResponse(distance_meters=est_km * 1000, duration_seconds=est_minutes * 60)
     )
-    assert estimation == expected_cost
+    assert nis_to_usd(expected_cost) - 0.01 <= estimation <= nis_to_usd(expected_cost) + 0.01

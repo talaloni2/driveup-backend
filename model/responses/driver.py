@@ -16,6 +16,8 @@ class OrderLocation(BaseModel):
     is_start_address: bool
     address: Geocode
     price: int
+    name: str = ""
+    phone: str = ""
 
 
 class DriveDetails(BaseModel):

@@ -6,7 +6,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException
 
 from component_factory import get_passenger_service, get_knapsack_service, get_driver_service, get_time_service, \
-    get_directions_service, get_cost_estimation_service
+    get_directions_service, get_cost_estimation_service, get_user_handler_service
 from controllers.utils import AuthenticatedUser, authenticated_user, adjust_timezone
 from mappings.factory_mapping import LIMITS_MAPPING
 from model.driver_drive_order import DriverDriveOrder, DriveOrderStatus
@@ -17,6 +17,7 @@ from model.responses.driver import DriveDetails, OrderLocation
 from model.responses.geocode import Geocode
 from model.responses.knapsack import SuggestedSolution, KnapsackSolution
 from model.responses.success import SuccessResponse
+from model.responses.user import UserHandlerGetByEmailResponse
 from model.top_candidate import TopCandidate
 from service.cost_estimation_service import CostEstimationService
 from service.directions_service import DirectionsService
@@ -24,6 +25,7 @@ from service.driver_service import DriverService
 from service.knapsack_service import KnapsackService
 from service.passenger_service import PassengerService
 from service.time_service import TimeService
+from service.user_handler_service import UserHandlerService
 
 router = APIRouter()
 
@@ -102,6 +104,7 @@ async def accept_drive(
     user: AuthenticatedUser = Depends(authenticated_user),
     time_service: TimeService = Depends(get_time_service),
     directions_service: DirectionsService = Depends(get_directions_service),
+    users_service: UserHandlerService = Depends(get_user_handler_service),
 ) -> SuccessResponse:
 
     now = time_service.utcnow()
@@ -116,7 +119,7 @@ async def accept_drive(
     await _update_frozen_orders(accept_drive_request, driver_order, passenger_service, user)
     await driver_service.set_drive_status(driver_order.id, DriveOrderStatus.ACTIVE)
 
-    await _update_estimated_arrivals(accept_drive_request, directions_service, now, passenger_service, driver_service)
+    await _update_estimated_arrivals(accept_drive_request, directions_service, now, passenger_service, driver_service, users_service, user)
     await reject_drives(knapsack_service, user, driver_service)
     return SuccessResponse(success=True)
 
@@ -137,8 +140,8 @@ async def _get_verified_order(accept_drive_request: DriverAcceptDrive, driver_se
     return suggestion
 
 
-async def _update_estimated_arrivals(accept_drive_request: DriverAcceptDrive, directions_service: DirectionsService, now: datetime, passenger_service: PassengerService, driver_service: DriverService):
-    route = await order_details(accept_drive_request.order_id, passenger_service, driver_service)
+async def _update_estimated_arrivals(accept_drive_request: DriverAcceptDrive, directions_service: DirectionsService, now: datetime, passenger_service: PassengerService, driver_service: DriverService, users_service: UserHandlerService, user: AuthenticatedUser):
+    route = await order_details(accept_drive_request.order_id, passenger_service, driver_service, users_service, user)
     passenger_locations = [r for r in route.order_locations if r.is_start_address]
     total_time = 0
     for i, loc in enumerate(passenger_locations):
@@ -166,12 +169,14 @@ async def order_details_preview(
     drive_id: str,
     passenger_service: PassengerService = Depends(get_passenger_service),
     driver_service: DriverService = Depends(get_driver_service),
-):
+    users_service: UserHandlerService = Depends(get_user_handler_service),
+    user: AuthenticatedUser = Depends(authenticated_user),
+) -> DriveDetails:
     driver_drive = await driver_service.get_driver_drive_by_id(drive_id)
     passenger_order_ids = [int(passenger_order["id"]) for passenger_order in driver_drive.passenger_orders]
     passenger_orders: list[PassengerDriveOrder] = await passenger_service.get_by_ids(passenger_order_ids)
 
-    return await _order_details(drive_id, passenger_orders, driver_drive)
+    return await _order_details(drive_id, passenger_orders, driver_drive, users_service, user)
 
 
 @router.get("/drive-details/{drive_id}")
@@ -179,33 +184,50 @@ async def order_details(
     drive_id: str,
     passenger_service: PassengerService = Depends(get_passenger_service),
     driver_service: DriverService = Depends(get_driver_service),
-
+    users_service: UserHandlerService = Depends(get_user_handler_service),
+    user: AuthenticatedUser = Depends(authenticated_user),
 ) -> DriveDetails:
 
     passenger_orders: list[PassengerDriveOrder] = await passenger_service.get_by_drive_id(drive_id=drive_id)
     driver_drive = await driver_service.get_driver_drive_by_id(drive_id=drive_id)
-    return await _order_details(drive_id, passenger_orders, driver_drive)
+    return await _order_details(drive_id, passenger_orders, driver_drive, users_service, user)
 
 
-async def _order_details(drive_id: str, passenger_orders: list[PassengerDriveOrder], driver_drive: DriverDriveOrder):
+async def _add_phone_and_name_to_order_locations(passengers_order_locations: list[OrderLocation], token: str, users_service: UserHandlerService):
+    found_users: dict[str, UserHandlerGetByEmailResponse] = {}
+    for passengers_order_location in passengers_order_locations:
+        email = passengers_order_location.user_email
+        if email not in found_users:
+            found_users[email] = await users_service.get_user_by_email(email, token)
+        user = found_users[email].result
+        passengers_order_location.name = user.full_name
+        passengers_order_location.phone = user.phone_number
+    return passengers_order_locations
+
+
+async def _order_details(drive_id: str, passenger_orders: list[PassengerDriveOrder], driver_drive: DriverDriveOrder, users_service: UserHandlerService, driver: AuthenticatedUser) -> DriveDetails:
     if not passenger_orders or not driver_drive:
         raise HTTPException(
             status_code=HTTPStatus.NOT_ACCEPTABLE, detail={"message": "Drive id not exists"}
         )
 
     order_locations = []
+    driver_user = await users_service.get_user_by_email(driver.email, driver.token)
     driver_order_location = OrderLocation(
         user_email=driver_drive.driver_id,
         is_driver=True,
         is_start_address=True,
         address=Geocode(latitude=driver_drive.current_location[0], longitude=driver_drive.current_location[1]),
-        price=0
+        price=0,
+        name=driver_user.result.full_name,
+        phone=driver_user.result.phone_number,
     )
     order_locations.append(driver_order_location)
 
     current_location = Geocode(latitude=driver_drive.current_location[0], longitude=driver_drive.current_location[1])
     passengers_order_locations, total_price = await build_order_locations_list(current_location=current_location, other_drives=passenger_orders)
 
+    passengers_order_locations = await _add_phone_and_name_to_order_locations(passengers_order_locations, driver.token, users_service)
     order_locations.extend(passengers_order_locations)
 
     return DriveDetails(
@@ -214,6 +236,7 @@ async def _order_details(drive_id: str, passenger_orders: list[PassengerDriveOrd
         order_locations=order_locations,
         total_price=total_price
     )
+
 
 @router.post("/finish-drive/{drive_id}")
 async def finish_drive(
